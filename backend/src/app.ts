@@ -18,4 +18,5 @@ export const buildApp = async (): Promise<FastifyInstance> => {
   });
 
   return app;
+
 };
