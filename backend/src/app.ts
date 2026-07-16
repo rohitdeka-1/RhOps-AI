@@ -2,7 +2,6 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 
-
 export const buildApp = async (): Promise<FastifyInstance> => {
   const app = Fastify({
     logger: true,
