@@ -1,24 +1,28 @@
 import Fastify, { FastifyInstance } from 'fastify';
-import cors from '@fastify/cors';
+
 import helmet from '@fastify/helmet';
 import authRoutes from './modules/auth/routes/auth.routes';
+import corsPlugin from './plugins/cors';
 
 export const buildApp = async (): Promise<FastifyInstance> => {
   const app = Fastify({
     logger: true,
   });
 
-  // Register plugins
-  await app.register(cors);
   await app.register(helmet);
+  await app.register(corsPlugin);
 
-  // Register routes
-  app.register(authRoutes, { prefix: '/api/auth' });
+  app.register(async (api) => {
 
-  // Health check route
-  app.get('/health', async () => {
-    return { status: 'ok', timestamp: new Date().toISOString() };
-  });
+    api.get('/health', async () => {
+      return { status: 'ok', timestamp: new Date().toISOString() };
+    });
+
+    api.register(authRoutes, { prefix: '/auth' });
+
+
+
+  }, { prefix: '/api/v1' });
 
   return app;
 
