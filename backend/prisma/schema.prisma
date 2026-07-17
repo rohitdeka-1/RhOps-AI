@@ -1,46 +1,66 @@
 generator client {
-    provider   = "prisma-client-js"
-    engineType = "library"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
-    provider = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-    id        String    @id @default(uuid())
-    email     String    @unique
-    username  String    @unique
-    password  String
-    name      String?
-    role      Role      @default(ROOT)
-    refreshToken  RefreshToken?
-    projects  Project[]
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
+  id           String        @id @default(uuid())
+  email        String        @unique
+  username     String        @unique
+  password     String
+  name         String?
+  role         Role          @default(ROOT)
+  refreshToken RefreshToken?
+  projects     Project[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  cluster      Cluster[]
 }
 
 model RefreshToken {
-    id        String   @id @default(uuid())
-    token     String   @unique
-    userId    String   @unique
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    expiresAt DateTime
-    createdAt DateTime @default(now())
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Project {
-    id          String   @id @default(uuid())
-    name        String
-    description String?
-    userId      String
-    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Cluster {
+  id         String   @id @default(uuid())
+  name       String
+  provider   String
+  apiServer  String
+  kubeconfig String
+  status     Status   @default(PENDING)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum Status {
+  PENDING
+  ACTIVE
+  INACTIVE
 }
 
 enum Role {
-    ROOT
-    DEVELOPER
-    VIEWER
+  ROOT
+  DEVELOPER
+  VIEWER
 }

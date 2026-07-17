@@ -22,7 +22,7 @@ export class LogoutController {
 
             reply.clearCookie('access_token');
             reply.clearCookie('refresh_token');
-            
+
             return reply.code(200).send({
                 success: true,
                 message: 'Logout success'

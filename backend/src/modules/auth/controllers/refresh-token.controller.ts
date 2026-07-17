@@ -24,7 +24,7 @@ export class RefreshTokenController {
                 role: user.role,
             }, { expiresIn: '15m' });
 
-            // Rotate refresh token
+
             const newRefreshToken = await this.refreshTokenService.createRefreshToken(user.id);
 
             reply.setCookie('access_token', newAccessToken, {
