@@ -2,11 +2,13 @@ import { FastifyInstance } from 'fastify';
 import { RegisterController } from '../controllers/register.controller';
 import { LoginController } from '../controllers/login.controller';
 import { MeController } from '../controllers/me.controller';
+import { LogoutController } from '../controllers/logout.controller';
 
 export default async function authRoutes(fastify: FastifyInstance) {
   const registerController = new RegisterController();
   const loginController = new LoginController();
   const meController = new MeController();
+  const logoutController = new LogoutController();
 
   fastify.post('/register', {
     schema: {
@@ -39,5 +41,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.get('/me', {
     preValidation: [fastify.authenticate]
   }, meController.me);
+
+  fastify.post('/logout', logoutController.logout);
 
 }

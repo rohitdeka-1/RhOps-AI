@@ -22,6 +22,14 @@ export class RegisterController {
         role: user.role
       });
 
+      reply.setCookie('access_token', token, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24
+      });
+
       return reply.code(201).send({
         success: true,
         data: user,

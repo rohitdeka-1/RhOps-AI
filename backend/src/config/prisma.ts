@@ -1,19 +1,29 @@
-import * as dotenv from 'dotenv';
-import path from 'path';
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-import { PrismaClient } from '@prisma/client';
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
-import ws from 'ws';
+import * as dotenv from "dotenv";
+import path from "path";
 
-// Set up WebSocket for Neon Serverless
+dotenv.config({
+    path: path.resolve(process.cwd(), ".env"),
+});
+
+import { PrismaClient } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+
 neonConfig.webSocketConstructor = ws;
 
-// Initialize the database pool
-const connectionString = process.env.DATABASE_URL || '';
-console.log("INITIALIZING PRISMA. DATABASE_URL is exactly:", JSON.stringify(connectionString));
-// Instantiate the adapter (Prisma v7 takes PoolConfig, not a Pool instance)
-const adapter = new PrismaNeon({ connectionString });
+const connectionString = process.env.DATABASE_URL;
 
-// Pass adapter to Prisma Client
-export const prisma = new PrismaClient({ adapter });
+if (!connectionString) {
+    throw new Error("DATABASE_URL is not defined");
+}
+
+console.log("Connecting Prisma...");
+
+const adapter = new PrismaNeon({
+    connectionString,
+});
+
+export const prisma = new PrismaClient({
+    adapter,
+});

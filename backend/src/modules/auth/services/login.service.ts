@@ -24,9 +24,7 @@ export class LoginService {
         if (!access) {
             throw new Error('Email or password incorrect');
         }
-
         return user;
-
     }
 
 }

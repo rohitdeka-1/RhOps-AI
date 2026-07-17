@@ -36,7 +36,7 @@ export class LoginController {
                 token: token
             })
         } catch (err: any) {
-            request.log.error(err)
+            return reply.code(400).send(err.message)
         }
     }
 

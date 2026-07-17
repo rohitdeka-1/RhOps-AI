@@ -3,11 +3,9 @@ import { AuthRepository } from "../repositories/auth.repository";
 
 export class MeService {
     private authRepository: AuthRepository;
-
     constructor() {
         this.authRepository = new AuthRepository
     }
-
     async getMe(userId: string) {
         const user = await this.authRepository.findUserById(userId);
         if (!user) {
@@ -17,5 +15,4 @@ export class MeService {
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
     }
-
 }
