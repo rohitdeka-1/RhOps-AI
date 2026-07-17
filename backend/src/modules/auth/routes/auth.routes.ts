@@ -21,7 +21,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
           email: { type: 'string', format: 'email' },
           password: { type: 'string', minLength: 6 },
           name: { type: 'string' }
-        }
+        },
+        additionalProperties: false
       }
     }
   }, registerController.register);
@@ -35,7 +36,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
         properties: {
           email: { type: 'string', format: 'email' },
           password: { type: 'string', minLength: 6 }
-        }
+        },
+        additionalProperties: false
       }
     }
   }, loginController.login);

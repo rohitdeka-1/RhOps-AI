@@ -17,6 +17,7 @@ export class ConnectClusterController {
             // 2. Extract values
             const name = body.name?.value;
             const provider = body.provider?.value;
+            const projectId = body.projectId?.value;
 
             // 3. kubeconfig can be an uploaded file (array or object) or a pasted text string (object)
             let kubeconfig = "";
@@ -34,16 +35,17 @@ export class ConnectClusterController {
                 else if (kcField.data) kubeconfig = kcField.data.toString('utf8');
             }
 
-            if (!name || !provider || !kubeconfig) {
+            if (!name || !provider || !projectId || !kubeconfig) {
                 return reply.code(400).send({
                     success: false,
-                    message: "Missing required fields: name, provider, kubeconfig file"
+                    message: "Missing required fields: name, provider, projectId, kubeconfig file"
                 });
             }
 
             const cluster = await this.connectClusterService.connect({
                 name,
                 provider,
+                projectId,
                 kubeconfig,
                 userId
             });

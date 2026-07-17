@@ -36,6 +36,7 @@ model Project {
   description String?
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clusters    Cluster[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -49,6 +50,8 @@ model Cluster {
   status     Status   @default(PENDING)
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

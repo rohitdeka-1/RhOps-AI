@@ -11,6 +11,7 @@ export class ConnectClusterService {
     async connect(data: {
         name: string;
         provider: string;
+        projectId: string;
         kubeconfig: string;
         userId: string;
     }) {
@@ -43,6 +44,7 @@ export class ConnectClusterService {
         const cluster = await this.clusterRepository.createCluster({
             name: data.name,
             provider: data.provider,
+            projectId: data.projectId,
             apiServer: apiServer,
             kubeconfig: encryptedKubeconfig,
             userId: data.userId
