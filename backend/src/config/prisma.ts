@@ -12,10 +12,8 @@ neonConfig.webSocketConstructor = ws;
 // Initialize the database pool
 const connectionString = process.env.DATABASE_URL || '';
 console.log("INITIALIZING PRISMA. DATABASE_URL is exactly:", JSON.stringify(connectionString));
-const pool = new Pool({ connectionString });
-
-// Instantiate the adapter
-const adapter = new PrismaNeon(pool);
+// Instantiate the adapter (Prisma v7 takes PoolConfig, not a Pool instance)
+const adapter = new PrismaNeon({ connectionString });
 
 // Pass adapter to Prisma Client
 export const prisma = new PrismaClient({ adapter });
