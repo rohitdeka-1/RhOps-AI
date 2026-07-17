@@ -7,9 +7,12 @@ const start = async () => {
 
     await app.listen({ port, host: '0.0.0.0' });
     app.log.info(`Server running on port ${port}`);
+
   } catch (err) {
+
     console.error(err);
     process.exit(1);
+
   }
 };
 
