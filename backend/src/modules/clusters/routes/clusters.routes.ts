@@ -29,7 +29,10 @@ export default async function clusterRoutes(fastify: FastifyInstance) {
                         properties: { value: { type: 'string' } } 
                     },
                     kubeconfig: { 
-                        type: ['object', 'array']
+                        anyOf: [
+                            { type: 'object' },
+                            { type: 'array' }
+                        ]
                     }
                 },
                 additionalProperties: false
