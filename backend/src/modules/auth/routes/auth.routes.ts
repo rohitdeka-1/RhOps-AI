@@ -3,12 +3,14 @@ import { RegisterController } from '../controllers/register.controller';
 import { LoginController } from '../controllers/login.controller';
 import { MeController } from '../controllers/me.controller';
 import { LogoutController } from '../controllers/logout.controller';
+import { RefreshTokenController } from '../controllers/refresh-token.controller';
 
 export default async function authRoutes(fastify: FastifyInstance) {
   const registerController = new RegisterController();
   const loginController = new LoginController();
   const meController = new MeController();
   const logoutController = new LogoutController();
+  const refreshTokenController = new RefreshTokenController();
 
   fastify.post('/register', {
     schema: {
@@ -43,5 +45,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
   }, meController.me);
 
   fastify.post('/logout', logoutController.logout);
+  fastify.post('/refresh', refreshTokenController.refresh);
 
 }

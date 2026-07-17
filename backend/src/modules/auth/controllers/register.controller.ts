@@ -1,13 +1,16 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { RegisterService } from '../services/register.service';
+import { RefreshTokenService } from '../services/refreshToken.service';
 import { Prisma } from '@prisma/client';
 
 
 export class RegisterController {
   private registerService: RegisterService;
+  private refreshTokenService: RefreshTokenService;
 
   constructor() {
     this.registerService = new RegisterService();
+    this.refreshTokenService = new RefreshTokenService();
   }
 
   register = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -17,17 +20,28 @@ export class RegisterController {
 
       const token = await reply.jwtSign({
         id: user.id,
+
         email: user.email,
         username: user.username,
         role: user.role
-      });
+      }, { expiresIn: '15m' });
+
+      const refreshToken = await this.refreshTokenService.createRefreshToken(user.id);
 
       reply.setCookie('access_token', token, {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 60 * 60 * 24
+        maxAge: 15 * 60
+      });
+
+      reply.setCookie('refresh_token', refreshToken, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60
       });
 
       return reply.code(201).send({
