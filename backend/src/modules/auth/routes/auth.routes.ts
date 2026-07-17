@@ -1,8 +1,12 @@
 import { FastifyInstance } from 'fastify';
-import { AuthController } from '../controllers/auth.controller';
+import { RegisterController } from '../controllers/register.controller';
+import { LoginController } from '../controllers/login.controller';
+import { MeController } from '../controllers/me.controller';
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  const authController = new AuthController();
+  const registerController = new RegisterController();
+  const loginController = new LoginController();
+  const meController = new MeController();
 
   fastify.post('/register', {
     schema: {
@@ -16,5 +20,24 @@ export default async function authRoutes(fastify: FastifyInstance) {
         }
       }
     }
-  }, authController.register);
+  }, registerController.register);
+
+
+  fastify.post('/login', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: {
+          email: { type: 'string', format: 'email' },
+          password: { type: 'string', minLength: 6 }
+        }
+      }
+    }
+  }, loginController.login);
+
+  fastify.get('/me', {
+    preValidation: [fastify.authenticate]
+  }, meController.me);
+
 }
