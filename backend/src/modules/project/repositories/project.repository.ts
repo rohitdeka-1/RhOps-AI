@@ -27,13 +27,32 @@ export class ProjectRepository {
         })
     }
 
+    async findProjectsByUserId(userId: string) {
+        return await prisma.project.findMany({
+            where: {
+                userId: userId
+            }
+        });
+    }
+
+    async updateProject(id: string, userId: string, data: { name: string }) {
+        return await prisma.project.updateMany({
+            where: {
+                id: id,
+                userId: userId
+            },
+            data: {
+                name: data.name
+            }
+        });
+    }
+
     async deleteProject(id: string, userId: string) {
-        return await prisma.project.delete({
+        return await prisma.project.deleteMany({
             where: {
                 id: id,
                 userId: userId
             }
         })
     }
-
 }
