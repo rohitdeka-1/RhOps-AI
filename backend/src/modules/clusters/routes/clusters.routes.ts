@@ -1,10 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import { ConnectClusterController } from '../controllers/connect-cluster.controller';
 import { DisconnectClusterController } from '../controllers/disconnect-cluster.controller';
+import { ListClusterController } from '../controllers/list-clusters.controller';
 
 export default async function clusterRoutes(fastify: FastifyInstance) {
     const connectClusterController = new ConnectClusterController();
     const disconnectClusterController = new DisconnectClusterController();
+    const listClusterController = new ListClusterController();
 
     fastify.post('/connect', {
         preValidation: [fastify.authenticate],
@@ -53,4 +55,22 @@ export default async function clusterRoutes(fastify: FastifyInstance) {
             }
         }
     }, disconnectClusterController.disconnect);
+
+    fastify.get('/', {
+        preValidation: [fastify.authenticate]
+    }, listClusterController.listClusters);
+
+    fastify.get('/:id/namespaces', {
+        preValidation: [fastify.authenticate],
+        schema: {
+            params: {
+                type: 'object',
+                required: ['id'],
+                properties: {
+                    id: { type: 'string' }
+                },
+                additionalProperties: false
+            }
+        }
+    }, listClusterController.listNamespaces);
 }

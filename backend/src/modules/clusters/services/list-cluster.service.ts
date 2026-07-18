@@ -29,29 +29,4 @@ export class ListClusterService {
         return namespaces;
     }
 
-    listPods = async () => {
-
-    }
-
-    listDeployments = async () => {
-
-    }
-
-    listServices = async () => {
-
-    }
-
-    listStatefulSets = async () => {
-
-    }
-
-    listDaemonSets = async () => {
-
-    }
-
-    listIngresses = async () => {
-
-    }
-
-
 }

@@ -5,6 +5,7 @@ import multipart from '@fastify/multipart';
 import authRoutes from './modules/auth/routes/auth.routes';
 import clusterRoutes from './modules/clusters/routes/clusters.routes';
 import projectRoutes from './modules/project/routes/project.routes';
+import podsRoutes from './modules/pods/routes/pods.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
 
@@ -30,6 +31,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     api.register(authRoutes, { prefix: '/auth' });
     api.register(clusterRoutes, { prefix: '/clusters' });
     api.register(projectRoutes, { prefix: '/projects' });
+    api.register(podsRoutes, { prefix: '/pods' });
   }, { prefix: '/api/v1' });
 
   return app;

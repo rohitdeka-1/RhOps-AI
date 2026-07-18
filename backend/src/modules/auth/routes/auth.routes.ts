@@ -16,11 +16,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
     schema: {
       body: {
         type: 'object',
-        required: ['email', 'password'],
+        required: ['email', 'password', 'username'],
         properties: {
           email: { type: 'string', format: 'email' },
           password: { type: 'string', minLength: 6 },
-          name: { type: 'string' }
+          name: { type: 'string' },
+          username: { type: 'string', minLength: 3 }
         },
         additionalProperties: false
       }
