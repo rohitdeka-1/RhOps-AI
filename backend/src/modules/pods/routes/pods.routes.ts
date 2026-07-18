@@ -1,8 +1,20 @@
 import { FastifyInstance } from 'fastify';
-import { PodsController } from '../controllers/pods.controller';
+import { GetPodsController } from '../controllers/get-pods.controller';
+import { GetPodController } from '../controllers/get-pod.controller';
+import { DeletePodController } from '../controllers/delete-pod.controller';
+import { DescribeController } from '../controllers/describe.controller';
+import { LogsController } from '../controllers/logs.controller';
+import { RestartPodController } from '../controllers/restart-pod.controller';
+import { ExecController } from '../controllers/exec.controller';
 
 export default async function podsRoutes(fastify: FastifyInstance) {
-    const podsController = new PodsController();
+    const getPodsController = new GetPodsController();
+    const getPodController = new GetPodController();
+    const deletePodController = new DeletePodController();
+    const describeController = new DescribeController();
+    const logsController = new LogsController();
+    const restartPodController = new RestartPodController();
+    const execController = new ExecController();
 
     fastify.get('/', {
         preValidation: [fastify.authenticate],
@@ -16,7 +28,7 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                 }
             }
         }
-    }, podsController.listPods);
+    }, getPodsController.listPods);
 
     fastify.get('/:name', {
         preValidation: [fastify.authenticate],
@@ -37,7 +49,7 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                 }
             }
         }
-    }, podsController.getPod);
+    }, getPodController.getPod);
 
     fastify.delete('/:name', {
         preValidation: [fastify.authenticate],
@@ -58,7 +70,7 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                 }
             }
         }
-    }, podsController.deletePod);
+    }, deletePodController.deletePod);
 
     fastify.get('/:name/describe', {
         preValidation: [fastify.authenticate],
@@ -79,7 +91,7 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                 }
             }
         }
-    }, podsController.describePod);
+    }, describeController.describePod);
 
     fastify.get('/:name/logs', {
         preValidation: [fastify.authenticate],
@@ -101,7 +113,7 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                 }
             }
         }
-    }, podsController.getLogs);
+    }, logsController.getLogs);
 
     fastify.post('/:name/restart', {
         preValidation: [fastify.authenticate],
@@ -122,7 +134,7 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                 }
             }
         }
-    }, podsController.restartPod);
+    }, restartPodController.restartPod);
 
     fastify.post('/:name/exec', {
         preValidation: [fastify.authenticate],
@@ -154,5 +166,5 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                 }
             }
         }
-    }, podsController.execPod);
+    }, execController.execPod);
 }
