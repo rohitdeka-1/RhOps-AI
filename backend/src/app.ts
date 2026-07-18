@@ -6,6 +6,8 @@ import authRoutes from './modules/auth/routes/auth.routes';
 import clusterRoutes from './modules/clusters/routes/clusters.routes';
 import projectRoutes from './modules/project/routes/project.routes';
 import podsRoutes from './modules/pods/routes/pods.routes';
+import deploymentsRoutes from './modules/deployments/routes/deployments.routes';
+import servicesRoutes from './modules/services/routes/services.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
 
@@ -32,6 +34,8 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     api.register(clusterRoutes, { prefix: '/clusters' });
     api.register(projectRoutes, { prefix: '/projects' });
     api.register(podsRoutes, { prefix: '/pods' });
+    api.register(deploymentsRoutes, { prefix: '/deployments' });
+    api.register(servicesRoutes, { prefix: '/services' });
   }, { prefix: '/api/v1' });
 
   return app;
