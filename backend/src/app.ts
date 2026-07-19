@@ -9,6 +9,7 @@ import podsRoutes from './modules/pods/routes/pods.routes';
 import deploymentsRoutes from './modules/deployments/routes/deployments.routes';
 import servicesRoutes from './modules/services/routes/services.routes';
 import namespacesRoutes from './modules/namespaces/routes/namespaces.routes';
+import nodesRoutes from './modules/nodes/routes/nodes.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
 
@@ -38,6 +39,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     api.register(deploymentsRoutes, { prefix: '/deployments' });
     api.register(servicesRoutes, { prefix: '/services' });
     api.register(namespacesRoutes, { prefix: '/namespaces' });
+    api.register(nodesRoutes, { prefix: '/nodes' });
   }, { prefix: '/api/v1' });
 
   return app;

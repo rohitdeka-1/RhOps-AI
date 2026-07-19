@@ -62,7 +62,8 @@ export default async function namespacesRoutes(fastify: FastifyInstance) {
                         type: 'object',
                         additionalProperties: { type: 'string' }
                     }
-                }
+                },
+                additionalProperties: false
             }
         }
     }, createController.createNamespace);

@@ -163,7 +163,8 @@ export default async function podsRoutes(fastify: FastifyInstance) {
                         type: 'array',
                         items: { type: 'string' }
                     }
-                }
+                },
+                additionalProperties: false
             }
         }
     }, execController.execPod);

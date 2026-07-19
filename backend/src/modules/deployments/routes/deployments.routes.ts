@@ -91,7 +91,8 @@ export default async function deploymentsRoutes(fastify: FastifyInstance) {
                 required: ['replicas'],
                 properties: {
                     replicas: { type: 'number' }
-                }
+                },
+                additionalProperties: false
             }
         }
     }, scaleController.scaleDeployment);
