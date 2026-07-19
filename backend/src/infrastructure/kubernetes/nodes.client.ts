@@ -11,7 +11,7 @@ export class NodesClient {
     async listNodes() {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
         const nodes = await coreApi.listNode();
-        return nodes.items;
+        return nodes.body.items;
     }
 
     async getNode(name: string) {
@@ -33,7 +33,7 @@ export class NodesClient {
         ];
 
         const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
-        const result = await coreApi.patchNode(name, patch, undefined, undefined, undefined, undefined, options);
+        const result = await coreApi.patchNode(name, patch, undefined, undefined, undefined, undefined, undefined, options);
         return result.body;
     }
 }

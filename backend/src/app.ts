@@ -12,6 +12,9 @@ import namespacesRoutes from './modules/namespaces/routes/namespaces.routes';
 import nodesRoutes from './modules/nodes/routes/nodes.routes';
 import ingressRoutes from './modules/ingress/routes/ingress.routes';
 import metricsRoutes from './modules/metrics/routes/metrics.routes';
+import eventsRoutes from './modules/events/routes/events.routes';
+import configmapsRoutes from './modules/configmaps/routes/configmaps.routes';
+import secretsRoutes from './modules/secrets/routes/secrets.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
 
@@ -44,6 +47,9 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     api.register(nodesRoutes, { prefix: '/nodes' });
     api.register(ingressRoutes, { prefix: '/ingress' });
     api.register(metricsRoutes, { prefix: '/metrics' });
+    api.register(eventsRoutes, { prefix: '/events' });
+    api.register(configmapsRoutes, { prefix: '/configmaps' });
+    api.register(secretsRoutes, { prefix: '/secrets' });
   }, { prefix: '/api/v1' });
 
   return app;

@@ -11,7 +11,7 @@ export class ServicesClient {
     async listServices(namespace: string = 'default') {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
         const services = await coreApi.listNamespacedService(namespace);
-        return services.items;
+        return services.body.items;
     }
 
     async getService(name: string, namespace: string = 'default') {

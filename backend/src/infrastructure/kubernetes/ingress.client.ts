@@ -11,19 +11,19 @@ export class IngressClient {
     async listIngresses(namespace: string = 'default') {
         const networkingApi = this.kc.makeApiClient(k8s.NetworkingV1Api);
         const ingresses = await networkingApi.listNamespacedIngress(namespace);
-        return ingresses.items;
+        return ingresses.body.items;
     }
 
     async getIngress(name: string, namespace: string = 'default') {
         const networkingApi = this.kc.makeApiClient(k8s.NetworkingV1Api);
         const ingress = await networkingApi.readNamespacedIngress(name, namespace);
-        return ingress;
+        return ingress.body;
     }
 
     async createIngress(namespace: string = 'default', body: k8s.V1Ingress) {
         const networkingApi = this.kc.makeApiClient(k8s.NetworkingV1Api);
         const result = await networkingApi.createNamespacedIngress(namespace, body);
-        return result;
+        return result.body;
     }
 
     async deleteIngress(name: string, namespace: string = 'default') {

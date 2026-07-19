@@ -34,6 +34,6 @@ export class KubernetesClient {
     async listNamespaces() {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
         const namespaces = await coreApi.listNamespace();
-        return namespaces.items;
+        return namespaces.body.items;
     }
 }

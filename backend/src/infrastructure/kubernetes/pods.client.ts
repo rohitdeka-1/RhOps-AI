@@ -11,7 +11,7 @@ export class PodsClient {
     async listPods(namespace: string = 'default') {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
         const pods = await coreApi.listNamespacedPod(namespace);
-        return pods.items;
+        return pods.body.items;
     }
 
     async getPod(name: string, namespace: string = 'default') {
