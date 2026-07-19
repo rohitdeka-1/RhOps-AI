@@ -22,7 +22,7 @@ export class NodesClient {
 
     async cordonNode(name: string, unschedulable: boolean) {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
-        
+
         // Cordoning is done by patching the node's spec.unschedulable field
         const patch = [
             {
@@ -31,8 +31,8 @@ export class NodesClient {
                 value: unschedulable
             }
         ];
-        
-        const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH }};
+
+        const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
         const result = await coreApi.patchNode(name, patch, undefined, undefined, undefined, undefined, options);
         return result.body;
     }
