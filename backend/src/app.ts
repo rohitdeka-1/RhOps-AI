@@ -11,6 +11,7 @@ import servicesRoutes from './modules/services/routes/services.routes';
 import namespacesRoutes from './modules/namespaces/routes/namespaces.routes';
 import nodesRoutes from './modules/nodes/routes/nodes.routes';
 import ingressRoutes from './modules/ingress/routes/ingress.routes';
+import metricsRoutes from './modules/metrics/routes/metrics.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
 
@@ -42,6 +43,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     api.register(namespacesRoutes, { prefix: '/namespaces' });
     api.register(nodesRoutes, { prefix: '/nodes' });
     api.register(ingressRoutes, { prefix: '/ingress' });
+    api.register(metricsRoutes, { prefix: '/metrics' });
   }, { prefix: '/api/v1' });
 
   return app;
