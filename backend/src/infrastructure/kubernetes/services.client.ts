@@ -25,4 +25,16 @@ export class ServicesClient {
         await coreApi.deleteNamespacedService(name, namespace);
         return true;
     }
+
+    async createService(namespace: string = 'default', body: k8s.V1Service) {
+        const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
+        const response = await coreApi.createNamespacedService(namespace, body);
+        return response.body;
+    }
+
+    async updateService(name: string, namespace: string = 'default', body: k8s.V1Service) {
+        const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
+        const response = await coreApi.replaceNamespacedService(name, namespace, body);
+        return response.body;
+    }
 }

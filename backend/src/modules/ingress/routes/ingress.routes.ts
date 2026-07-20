@@ -3,12 +3,14 @@ import { ListIngressController } from '../controllers/list.controller';
 import { GetIngressController } from '../controllers/get.controller';
 import { CreateIngressController } from '../controllers/create.controller';
 import { DeleteIngressController } from '../controllers/delete.controller';
+import { UpdateIngressController } from '../controllers/update.controller';
 
 export default async function ingressRoutes(fastify: FastifyInstance) {
     const listController = new ListIngressController();
     const getController = new GetIngressController();
     const createController = new CreateIngressController();
     const deleteController = new DeleteIngressController();
+    const updateController = new UpdateIngressController();
 
     fastify.get('/', {
         preValidation: [fastify.authenticate],
@@ -86,4 +88,29 @@ export default async function ingressRoutes(fastify: FastifyInstance) {
             }
         }
     }, deleteController.deleteIngress);
+
+    fastify.put('/:name', {
+        preValidation: [fastify.authenticate],
+        schema: {
+            querystring: {
+                type: 'object',
+                required: ['clusterId'],
+                properties: {
+                    clusterId: { type: 'string' },
+                    namespace: { type: 'string' }
+                }
+            },
+            params: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                    name: { type: 'string' }
+                }
+            },
+            body: {
+                type: 'object',
+                additionalProperties: true
+            }
+        }
+    }, updateController.updateIngress);
 }

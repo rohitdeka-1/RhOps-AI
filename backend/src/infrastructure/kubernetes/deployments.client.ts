@@ -40,7 +40,7 @@ export class DeploymentsClient {
     async restartDeployment(name: string, namespace: string = 'default') {
         const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
         const deployment = await appsApi.readNamespacedDeployment(name, namespace);
-        
+
         if (!deployment.body.spec) {
             throw new Error("Deployment spec not found");
         }
@@ -51,8 +51,20 @@ export class DeploymentsClient {
             deployment.body.spec.template.metadata.annotations = {};
         }
         deployment.body.spec.template.metadata.annotations['kubectl.kubernetes.io/restartedAt'] = new Date().toISOString();
-        
+
         const result = await appsApi.replaceNamespacedDeployment(name, namespace, deployment.body);
         return result.body;
+    }
+
+    async createDeployment(namespace: string = 'default', body: k8s.V1Deployment) {
+        const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
+        const response = await appsApi.createNamespacedDeployment(namespace, body);
+        return response.body;
+    }
+
+    async updateDeployment(name: string, namespace: string = 'default', body: k8s.V1Deployment) {
+        const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
+        const response = await appsApi.replaceNamespacedDeployment(name, namespace, body);
+        return response.body;
     }
 }

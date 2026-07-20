@@ -31,4 +31,10 @@ export class IngressClient {
         await networkingApi.deleteNamespacedIngress(name, namespace);
         return true;
     }
+
+    async updateIngress(name: string, namespace: string = 'default', body: k8s.V1Ingress) {
+        const networkingApi = this.kc.makeApiClient(k8s.NetworkingV1Api);
+        const result = await networkingApi.replaceNamespacedIngress(name, namespace, body);
+        return result.body;
+    }
 }
