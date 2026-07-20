@@ -15,6 +15,7 @@ import metricsRoutes from './modules/metrics/routes/metrics.routes';
 import eventsRoutes from './modules/events/routes/events.routes';
 import configmapsRoutes from './modules/configmaps/routes/configmaps.routes';
 import secretsRoutes from './modules/secrets/routes/secrets.routes';
+import graphRoutes from './modules/graph/routes/graph.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
 
@@ -50,6 +51,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     api.register(eventsRoutes, { prefix: '/events' });
     api.register(configmapsRoutes, { prefix: '/configmaps' });
     api.register(secretsRoutes, { prefix: '/secrets' });
+    api.register(graphRoutes, { prefix: '/graph' });
   }, { prefix: '/api/v1' });
 
   return app;
