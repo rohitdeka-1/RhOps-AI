@@ -1,0 +1,228 @@
+/* StylePack — Colorful (Mint)
+ *
+ * Mint green primary (#81DE90), warm stone neutrals, Figtree font.
+ * OKLCH tokens. 0.625rem radius. Full dark mode.
+ * Imported AFTER index.css — these values override the neutral defaults.
+ */
+
+:root {
+  --font-heading: "Figtree", sans-serif;
+  --font-body: "Figtree", sans-serif;
+  --font-heading-weight: 600;
+  --font-body-weight: 400;
+
+  --radius: 0.625rem;
+
+  /* Stone neutrals (warm) */
+  --color-background: oklch(98.59% 0.0012 106.42);
+  --color-foreground: oklch(21.61% 0.0062 56.04);
+  --color-card: oklch(100% 0 89.88);
+  --color-card-foreground: oklch(21.61% 0.0062 56.04);
+  --color-popover: oklch(100% 0 89.88);
+  --color-popover-foreground: oklch(21.61% 0.0062 56.04);
+
+  /* Mint primary */
+  --color-primary: oklch(82.34% 0.1385 148.16);
+  --color-primary-foreground: oklch(26.20% 0.0487 147.82);
+
+  --color-secondary: oklch(97.08% 0.0014 106.42);
+  --color-secondary-foreground: oklch(27.04% 0.0089 55.98);
+  --color-muted: oklch(97.08% 0.0014 106.42);
+  --color-muted-foreground: oklch(55.59% 0.0111 58.09);
+  --color-accent: oklch(97.08% 0.0014 106.42);
+  --color-accent-foreground: oklch(27.04% 0.0089 55.98);
+  --color-destructive: oklch(57.86% 0.2137 27.17);
+  --color-destructive-foreground: oklch(100% 0 89.88);
+  --color-border: oklch(92.42% 0.0027 67.79);
+  --color-input: oklch(92.42% 0.0027 67.79);
+  --color-ring: oklch(82.34% 0.1385 148.16);
+
+  /* Sidebar */
+  --color-sidebar: oklch(98.48% 0 89.88);
+  --color-sidebar-foreground: oklch(37.05% 0.012 285.80);
+  --color-sidebar-primary: oklch(21.03% 0.0059 285.88);
+  --color-sidebar-primary-foreground: oklch(98.48% 0 89.88);
+  --color-sidebar-accent: oklch(96.76% 0.0013 286.38);
+  --color-sidebar-accent-foreground: oklch(21.03% 0.0059 285.88);
+  --color-sidebar-border: oklch(92.78% 0.0058 264.53);
+  --color-sidebar-ring: oklch(62.32% 0.1879 259.80);
+}
+
+.dark {
+  --color-background: oklch(17% 0.0024 56.24);
+  --color-foreground: oklch(98.48% 0 89.88);
+  --color-card: oklch(20.46% 0.0034 56.20);
+  --color-card-foreground: oklch(98.48% 0 89.88);
+  --color-popover: oklch(20.46% 0.0034 56.20);
+  --color-popover-foreground: oklch(98.48% 0 89.88);
+  --color-primary: oklch(82.34% 0.1385 148.16);
+  --color-primary-foreground: oklch(26.20% 0.0487 147.82);
+  --color-secondary: oklch(25.94% 0.005 56.17);
+  --color-secondary-foreground: oklch(98.48% 0 89.88);
+  --color-muted: oklch(25.94% 0.005 56.17);
+  --color-muted-foreground: oklch(71.67% 0.0083 56.27);
+  --color-accent: oklch(25.94% 0.005 56.17);
+  --color-accent-foreground: oklch(98.48% 0 89.88);
+  --color-destructive: oklch(47.76% 0.1631 25.94);
+  --color-destructive-foreground: oklch(98.48% 0 89.88);
+  --color-border: oklch(30.12% 0.0062 56.15);
+  --color-input: oklch(30.12% 0.0062 56.15);
+  --color-ring: oklch(82.34% 0.1385 148.16);
+  --color-sidebar: oklch(19.33% 0.0031 56.21);
+  --color-sidebar-foreground: oklch(71.67% 0.0083 56.27);
+  --color-sidebar-primary: oklch(98.48% 0 89.88);
+  --color-sidebar-primary-foreground: oklch(19.33% 0.0031 56.21);
+  --color-sidebar-accent: oklch(25.94% 0.005 56.17);
+  --color-sidebar-accent-foreground: oklch(98.48% 0 89.88);
+  --color-sidebar-border: oklch(30.12% 0.0062 56.15);
+  --color-sidebar-ring: oklch(82.34% 0.1385 148.16);
+}
+
+body {
+  font-feature-settings: "ss01", "cv11";
+  text-rendering: optimizeLegibility;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  font-weight: var(--font-body-weight);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-heading-weight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Actionable icon color ────────────────────────────────────
+ * Every clickable element's icon gets primary color automatically.
+ * Excludes filled primary surfaces where icons should inherit foreground. */
+
+button:not([disabled]) > svg,
+a > svg,
+[role="button"] > svg {
+  color: var(--color-primary);
+}
+
+/* Icons inside filled primary surfaces keep their inherited color */
+.bg-primary svg,
+[data-variant="default"] svg {
+  color: inherit;
+}
+
+/* ── Hero entrance animation ─────────────────────────────────── */
+
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Cycler tabs nav (used by FeatureShowcase + Testimonials) ─── */
+
+.cycler-tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-block-end: 3.2rem;
+}
+
+.cycler-tabs-nav button {
+  padding: 0.5rem 1rem;
+  border-radius: 3.2rem;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-muted-foreground);
+  transition:
+    background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cycler-tabs-nav button .timer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: color-mix(in oklch, var(--color-foreground) 10%, transparent);
+  display: none;
+  z-index: 1;
+}
+
+.bg-primary .cycler-tabs-nav button .timer {
+  background: var(--color-card);
+}
+
+.cycler-tabs-nav button > *:not(.timer) {
+  position: relative;
+  z-index: 2;
+}
+
+.cycler-tabs-nav button.active {
+  color: var(--color-foreground);
+}
+
+.cycler-tabs-nav button:not(.active):hover {
+  background: color-mix(in oklch, var(--color-foreground) 6%, transparent);
+  color: var(--color-foreground);
+}
+
+.bg-primary .cycler-tabs-nav button.active {
+  color: var(--color-primary-foreground);
+}
+
+.bg-primary .cycler-tabs-nav button:not(.active):hover {
+  background: var(--color-card);
+  color: var(--color-primary-foreground);
+}
+
+.cycler-tabs-nav button.active .timer {
+  display: block;
+}
+
+.cycler-tabs-nav button.toggle-autoplay {
+  background: color-mix(in oklch, var(--color-foreground) 6%, transparent);
+  color: var(--color-foreground);
+  display: block;
+  width: 2.375rem;
+  height: 2.375rem;
+  padding: 0;
+  border-radius: 2.375rem;
+}
+
+.bg-primary .cycler-tabs-nav button.toggle-autoplay {
+  background: var(--color-card);
+  color: var(--color-primary-foreground);
+}
+
+.cycler-tabs-nav button.toggle-autoplay svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.cycler-tabs-nav button.toggle-autoplay.playing svg.play,
+.cycler-tabs-nav button.toggle-autoplay:not(.playing) svg.pause {
+  opacity: 0;
+}
+
+.cycler-tabs-nav button.toggle-autoplay:not(.playing) svg.play {
+  opacity: 1;
+}

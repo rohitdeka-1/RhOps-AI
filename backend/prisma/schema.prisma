@@ -19,6 +19,8 @@ model User {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   cluster      Cluster[]
+  auditLogs    AuditLog[]
+  chatSessions ChatSession[]
 }
 
 model RefreshToken {
@@ -31,28 +33,66 @@ model RefreshToken {
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  name        String
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clusters    Cluster[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String    @id @default(uuid())
+  name      String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clusters  Cluster[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Cluster {
-  id         String   @id @default(uuid())
-  name       String
-  provider   String
-  apiServer  String
-  kubeconfig String
-  status     Status   @default(PENDING)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projectId  String
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String        @id @default(uuid())
+  name         String
+  provider     String
+  apiServer    String
+  kubeconfig   String
+  status       Status        @default(PENDING)
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId    String
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  auditLogs    AuditLog[]
+  chatSessions ChatSession[]
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  clusterId String
+  action    String // e.g., "SCALED_DEPLOYMENT", "DELETED_POD"
+  resource  String // e.g., "deployment/nginx"
+  status    String // "SUCCESS" | "FAILED"
+  metadata  Json? // Store exact payload or error message here
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  cluster Cluster @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  title     String
+  userId    String
+  clusterId String?
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cluster Cluster? @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String // "USER" | "AI" | "SYSTEM"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 enum Status {
