@@ -49,7 +49,7 @@ export function Header() {
             className={cn(
               "hidden sm:inline-flex",
               onHero &&
-                "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground",
+              "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground",
             )}
           >
             <a href="/demo/overview">View demo</a>
@@ -59,7 +59,7 @@ export function Header() {
             asChild
             className={cn(
               onHero &&
-                "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground",
+              "text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground",
             )}
           >
             <a href="/auth">Sign in</a>

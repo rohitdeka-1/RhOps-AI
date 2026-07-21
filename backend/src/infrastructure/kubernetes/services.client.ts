@@ -8,10 +8,15 @@ export class ServicesClient {
         this.kc.loadFromString(kubeconfigString);
     }
 
-    async listServices(namespace: string = 'default') {
+    async listServices(namespace?: string) {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
-        const services = await coreApi.listNamespacedService(namespace);
-        return services.body.items;
+        if (!namespace || namespace === 'all') {
+            const services = await coreApi.listServiceForAllNamespaces();
+            return services.body.items;
+        } else {
+            const services = await coreApi.listNamespacedService(namespace);
+            return services.body.items;
+        }
     }
 
     async getService(name: string, namespace: string = 'default') {

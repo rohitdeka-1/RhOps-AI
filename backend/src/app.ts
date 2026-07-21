@@ -16,8 +16,10 @@ import eventsRoutes from './modules/events/routes/events.routes';
 import configmapsRoutes from './modules/configmaps/routes/configmaps.routes';
 import secretsRoutes from './modules/secrets/routes/secrets.routes';
 import graphRoutes from './modules/graph/routes/graph.routes';
+import websocketsRoutes from './modules/websockets/routes/websockets.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
+import websocketPlugin from '@fastify/websocket';
 
 export const buildApp = async (): Promise<FastifyInstance> => {
   const app = Fastify({
@@ -28,6 +30,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
   await app.register(cookie);
   await app.register(corsPlugin);
   await app.register(jwtPlugin);
+  await app.register(websocketPlugin);
   await app.register(multipart, {
     attachFieldsToBody: true
   });
@@ -52,6 +55,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
     api.register(configmapsRoutes, { prefix: '/configmaps' });
     api.register(secretsRoutes, { prefix: '/secrets' });
     api.register(graphRoutes, { prefix: '/graph' });
+    api.register(websocketsRoutes, { prefix: '/ws' });
   }, { prefix: '/api/v1' });
 
   return app;

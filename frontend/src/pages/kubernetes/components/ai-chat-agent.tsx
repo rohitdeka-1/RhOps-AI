@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IconSparkles, IconSend, IconUser, IconChevronRight } from "@tabler/icons-react";
+import { IconSparkles, IconArrowUp, IconUser, IconChevronRight } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 interface AiChatAgentProps {
@@ -77,8 +77,8 @@ export function AiChatAgent({ onClose }: AiChatAgentProps) {
         ))}
       </div>
 
-      <div className="p-4 border-t border-border bg-background">
-        <form onSubmit={handleSend} className="relative flex items-end">
+      <div className="p-4 bg-transparent">
+        <form onSubmit={handleSend} className="relative flex flex-col bg-[#1e1e22] rounded-[24px] border border-border/50 p-2 shadow-sm transition-all focus-within:ring-1 focus-within:ring-primary/50">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -88,17 +88,19 @@ export function AiChatAgent({ onClose }: AiChatAgentProps) {
                 handleSend(e as unknown as React.FormEvent);
               }
             }}
-            placeholder="Ask RhOps AI..."
-            rows={2}
-            className="w-full bg-muted/50 border border-border rounded-2xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-muted-foreground resize-none"
+            placeholder="Ask anything, @ to mention, / for actions"
+            rows={1}
+            className="w-full bg-transparent text-white py-2 pl-3 pr-12 text-sm focus:outline-none placeholder:text-muted-foreground resize-none min-h-[44px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           />
-          <button
-            type="submit"
-            disabled={!input.trim()}
-            className="absolute bottom-2 right-2 p-1.5 bg-foreground text-background rounded-full hover:bg-foreground/90 disabled:opacity-30 transition-all"
-          >
-            <IconSend className="size-4" />
-          </button>
+          <div className="flex items-center justify-end px-1 pb-1">
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              className="p-1.5 bg-[#2d2d33] text-zinc-400 rounded-full hover:bg-[#3d3d45] hover:text-white disabled:opacity-50 disabled:hover:bg-[#2d2d33] disabled:hover:text-zinc-400 transition-all"
+            >
+              <IconArrowUp className="size-4" stroke={2.5} />
+            </button>
+          </div>
         </form>
       </div>
     </div>

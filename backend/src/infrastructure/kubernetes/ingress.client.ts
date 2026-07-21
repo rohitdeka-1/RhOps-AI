@@ -8,10 +8,15 @@ export class IngressClient {
         this.kc.loadFromString(kubeconfigString);
     }
 
-    async listIngresses(namespace: string = 'default') {
+    async listIngresses(namespace?: string) {
         const networkingApi = this.kc.makeApiClient(k8s.NetworkingV1Api);
-        const ingresses = await networkingApi.listNamespacedIngress(namespace);
-        return ingresses.body.items;
+        if (!namespace || namespace === 'all') {
+            const ingresses = await networkingApi.listIngressForAllNamespaces();
+            return ingresses.body.items;
+        } else {
+            const ingresses = await networkingApi.listNamespacedIngress(namespace);
+            return ingresses.body.items;
+        }
     }
 
     async getIngress(name: string, namespace: string = 'default') {

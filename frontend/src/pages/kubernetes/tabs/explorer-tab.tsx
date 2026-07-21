@@ -1,39 +1,113 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { IconSearch, IconFilter, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { ResourceDrawer } from "../components/resource-drawer";
+import { useClusterStream } from "@/hooks/use-cluster-stream";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const resourceTypes = ["Pods", "Deployments", "Services", "StatefulSets", "DaemonSets", "Jobs", "ConfigMaps", "Secrets", "Ingress"];
 
-const mockData = [
-  { id: 1, name: "frontend-deployment-7f89c4b", type: "Pod", namespace: "default", status: "Running", age: "2d", cpu: "12m", mem: "128Mi" },
-  { id: 2, name: "backend-api-core-2", type: "Pod", namespace: "default", status: "Running", age: "5h", cpu: "45m", mem: "256Mi" },
-  { id: 3, name: "redis-cache-0", type: "Pod", namespace: "cache", status: "Running", age: "12d", cpu: "5m", mem: "1Gi" },
-  { id: 4, name: "kube-dns-5c5445b4", type: "Pod", namespace: "kube-system", status: "Running", age: "45d", cpu: "2m", mem: "64Mi" },
-  { id: 5, name: "metrics-server-84f5g", type: "Pod", namespace: "kube-system", status: "Running", age: "45d", cpu: "1m", mem: "32Mi" },
-];
-
-export function ExplorerTab() {
+export function ExplorerTab({ clusterId }: { clusterId: string }) {
   const [activeType, setActiveType] = useState("Pods");
   const [search, setSearch] = useState("");
   const [showSystemNamespaces, setShowSystemNamespaces] = useState(false);
-  const [selectedNamespace, setSelectedNamespace] = useState("All Namespaces");
+  const [selectedNamespace, setSelectedNamespace] = useLocalStorage(`k8s-namespace-${clusterId}`, "All Namespaces");
   const [selectedResource, setSelectedResource] = useState<any>(null);
 
+  const { data: streamData } = useClusterStream(clusterId);
+
+  // Compute live data
+  const liveData = useMemo(() => {
+    if (!streamData) return [];
+    
+    const items: any[] = [];
+    
+    const parseAge = (creationTimestamp: string) => {
+      if (!creationTimestamp) return "unknown";
+      const diff = Date.now() - new Date(creationTimestamp).getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      if (hours < 24) return `${hours}h`;
+      return `${Math.floor(hours / 24)}d`;
+    };
+
+    // Pods
+    const pods = streamData.pods?.items || streamData.pods || [];
+    pods.forEach((p: any) => {
+      items.push({
+        id: p.metadata?.uid || Math.random().toString(),
+        name: p.metadata?.name,
+        type: "Pods", // Match the activeType name
+        namespace: p.metadata?.namespace,
+        status: p.status?.phase || "Unknown",
+        age: parseAge(p.metadata?.creationTimestamp),
+        cpu: "N/A", // We'd need pod metrics mapping here
+        mem: "N/A",
+        raw: p
+      });
+    });
+
+    // Deployments
+    const deps = streamData.deployments?.items || streamData.deployments || [];
+    deps.forEach((d: any) => {
+      const readyReplicas = d.status?.readyReplicas || 0;
+      const replicas = d.status?.replicas || 0;
+      items.push({
+        id: d.metadata?.uid || Math.random().toString(),
+        name: d.metadata?.name,
+        type: "Deployments",
+        namespace: d.metadata?.namespace,
+        status: `${readyReplicas}/${replicas} Ready`,
+        age: parseAge(d.metadata?.creationTimestamp),
+        cpu: "-",
+        mem: "-",
+        raw: d
+      });
+    });
+
+    // Services
+    const svcs = streamData.services?.items || streamData.services || [];
+    svcs.forEach((s: any) => {
+      items.push({
+        id: s.metadata?.uid || Math.random().toString(),
+        name: s.metadata?.name,
+        type: "Services",
+        namespace: s.metadata?.namespace,
+        status: s.spec?.type || "ClusterIP",
+        age: parseAge(s.metadata?.creationTimestamp),
+        cpu: "-",
+        mem: "-",
+        raw: s
+      });
+    });
+
+    return items;
+  }, [streamData]);
+
+  // Extract unique namespaces for dropdown
+  const availableNamespaces = useMemo(() => {
+    const namespaces = streamData?.namespaces?.items || streamData?.namespaces || [];
+    if (namespaces.length > 0) {
+      return namespaces.map((ns: any) => ns.metadata?.name || ns.name);
+    }
+    // Fallback to extracting from liveData if namespace API fails
+    const unique = new Set(liveData.map(item => item.namespace));
+    return Array.from(unique).filter(Boolean);
+  }, [streamData, liveData]);
+
   // Filter logic
-  const filteredData = mockData.filter(item => {
+  const filteredData = liveData.filter(item => {
     // Type filter
     if (item.type !== activeType) return false;
     
     // System namespace filter
-    const isSystem = item.namespace.startsWith("kube-");
-    if (!showSystemNamespaces && isSystem) return false;
+    const isSystem = item.namespace?.startsWith("kube-") || item.namespace === "default"; // wait, default isn't system usually, but okay
+    if (!showSystemNamespaces && item.namespace?.startsWith("kube-")) return false;
 
     // Specific namespace filter
     if (selectedNamespace !== "All Namespaces" && item.namespace !== selectedNamespace) return false;
 
     // Search filter
-    if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !item.name?.toLowerCase().includes(search.toLowerCase())) return false;
 
     return true;
   });
@@ -48,18 +122,19 @@ export function ExplorerTab() {
           <p className="text-sm text-muted-foreground mt-1">Browse and manage all cluster resources</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm bg-card border border-border rounded-md px-3 py-1.5 shadow-sm">
-            <span className="text-muted-foreground">Namespace:</span>
+          <div className="relative flex items-center gap-2 text-sm bg-card border border-border rounded-md px-3 py-1.5 shadow-sm transition-colors hover:border-primary/50 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50">
+            <span className="text-muted-foreground pointer-events-none">Namespace:</span>
             <select 
               value={selectedNamespace} 
               onChange={(e) => setSelectedNamespace(e.target.value)}
-              className="bg-transparent font-medium focus:outline-none appearance-none pr-4"
+              className="bg-transparent font-medium focus:outline-none appearance-none pr-8 cursor-pointer text-foreground w-full"
             >
-              <option>All Namespaces</option>
-              <option>default</option>
-              <option>cache</option>
-              {showSystemNamespaces && <option>kube-system</option>}
+              <option className="bg-card text-foreground" value="All Namespaces">All Namespaces</option>
+              {availableNamespaces.map((ns: string) => (
+                <option className="bg-card text-foreground" key={ns} value={ns}>{ns}</option>
+              ))}
             </select>
+            <IconChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           </div>
           
           <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors">

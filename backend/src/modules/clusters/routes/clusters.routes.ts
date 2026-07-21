@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { ConnectClusterController } from '../controllers/connect-cluster.controller';
 import { DisconnectClusterController } from '../controllers/disconnect-cluster.controller';
 import { ListClusterController } from '../controllers/list-clusters.controller';
+import { TopologyController } from '../controllers/topology.controller';
 
 export default async function clusterRoutes(fastify: FastifyInstance) {
     const connectClusterController = new ConnectClusterController();
@@ -73,4 +74,14 @@ export default async function clusterRoutes(fastify: FastifyInstance) {
             }
         }
     }, listClusterController.listNamespaces);
+
+    const topologyController = new TopologyController();
+    
+    fastify.get('/:id/topology', {
+        preValidation: [fastify.authenticate]
+    }, topologyController.getTopology.bind(topologyController));
+    
+    fastify.post('/:id/topology', {
+        preValidation: [fastify.authenticate]
+    }, topologyController.saveTopology.bind(topologyController));
 }

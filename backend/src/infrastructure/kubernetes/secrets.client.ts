@@ -8,10 +8,26 @@ export class SecretsClient {
         this.kc.loadFromString(kubeconfigString);
     }
 
-    async listSecrets(namespace: string = 'default') {
+    async listSecrets(namespace?: string) {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
-        const secrets = await coreApi.listNamespacedSecret(namespace);
-        return secrets.body.items;
+        if (!namespace || namespace === 'all') {
+            const secrets = await coreApi.listSecretForAllNamespaces();
+            // User requested to fetch Secrets metadata only (no values). We should sanitize them.
+            const sanitized = secrets.body.items.map(s => {
+                delete s.data; // Remove base64 data
+                delete s.stringData;
+                return s;
+            });
+            return sanitized;
+        } else {
+            const secrets = await coreApi.listNamespacedSecret(namespace);
+            const sanitized = secrets.body.items.map(s => {
+                delete s.data;
+                delete s.stringData;
+                return s;
+            });
+            return sanitized;
+        }
     }
 
     async getSecret(name: string, namespace: string = 'default') {

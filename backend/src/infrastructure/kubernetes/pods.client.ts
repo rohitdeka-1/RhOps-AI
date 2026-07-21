@@ -8,10 +8,15 @@ export class PodsClient {
         this.kc.loadFromString(kubeconfigString);
     }
 
-    async listPods(namespace: string = 'default') {
+    async listPods(namespace?: string) {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
-        const pods = await coreApi.listNamespacedPod(namespace);
-        return pods.body.items;
+        if (!namespace || namespace === 'all') {
+            const pods = await coreApi.listPodForAllNamespaces();
+            return pods.body.items;
+        } else {
+            const pods = await coreApi.listNamespacedPod(namespace);
+            return pods.body.items;
+        }
     }
 
     async getPod(name: string, namespace: string = 'default') {

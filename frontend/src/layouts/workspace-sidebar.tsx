@@ -54,6 +54,7 @@ const getClusterNavGroups = (clusterId: string) => [
     items: [
       { label: "Overview", href: `/cluster?clusterId=${clusterId}&tab=overview`, icon: IconHome },
       { label: "Cluster Explorer", href: `/cluster?clusterId=${clusterId}&tab=explorer`, icon: IconGraph },
+      { label: "Architecture", href: `/cluster?clusterId=${clusterId}&tab=architecture`, icon: IconNetwork },
     ]
   },
   {

@@ -57,6 +57,7 @@ model Cluster {
   updatedAt    DateTime      @updatedAt
   auditLogs    AuditLog[]
   chatSessions ChatSession[]
+  topologyLayouts TopologyLayout[]
 }
 
 model AuditLog {
@@ -93,6 +94,19 @@ model ChatMessage {
   createdAt DateTime @default(now())
 
   session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model TopologyLayout {
+  id        String   @id @default(uuid())
+  clusterId String
+  namespace String
+  layout    Json     
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cluster   Cluster  @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  
+  @@unique([clusterId, namespace])
 }
 
 enum Status {

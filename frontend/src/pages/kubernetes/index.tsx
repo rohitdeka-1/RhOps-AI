@@ -2,16 +2,15 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ConnectCluster } from "./components/connect-cluster";
 import { useClusters } from "@/hooks/use-clusters";
-import { IconLoader2, IconSparkles } from "@tabler/icons-react";
+import { IconLoader2 } from "@tabler/icons-react";
 import { OverviewTab } from "./tabs/overview-tab";
 import { ExplorerTab } from "./tabs/explorer-tab";
-import { AiChatAgent } from "./components/ai-chat-agent";
+import { ArchitectureTab } from "./tabs/architecture-tab";
 
 export default function Kubernetes() {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("clusterId");
   const tab = searchParams.get("tab") || "overview";
-  const [isChatOpen, setIsChatOpen] = useState(true);
   
   const { data: clusters, isLoading } = useClusters();
   
@@ -44,9 +43,11 @@ export default function Kubernetes() {
   const renderTab = () => {
     switch (tab) {
       case "overview":
-        return <OverviewTab clusterId={projectId} cluster={projectCluster} />;
+        return <OverviewTab clusterId={projectCluster.id} cluster={projectCluster} />;
       case "explorer":
-        return <ExplorerTab />;
+        return <ExplorerTab clusterId={projectCluster.id} />;
+      case "architecture":
+        return <ArchitectureTab clusterId={projectCluster.id} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
@@ -62,24 +63,6 @@ export default function Kubernetes() {
       <main className="flex-1 overflow-auto p-6 bg-muted/20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {renderTab()}
       </main>
-      
-      {/* Persistent AI Chat Agent Sidebar */}
-      {isChatOpen && (
-        <aside className="w-[320px] lg:w-[350px] shrink-0 border-l border-border bg-background flex flex-col z-10 hidden md:flex animate-in slide-in-from-right-10 duration-300">
-          <AiChatAgent onClose={() => setIsChatOpen(false)} />
-        </aside>
-      )}
-
-      {/* Floating button to reopen the chat when collapsed */}
-      {!isChatOpen && (
-        <button 
-          onClick={() => setIsChatOpen(true)}
-          className="absolute bottom-6 right-6 p-3.5 bg-primary text-primary-foreground rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 z-50 animate-in fade-in zoom-in duration-300"
-          title="Open Assistant"
-        >
-          <IconSparkles className="size-6" />
-        </button>
-      )}
     </div>
   );
 }

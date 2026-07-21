@@ -8,10 +8,15 @@ export class DeploymentsClient {
         this.kc.loadFromString(kubeconfigString);
     }
 
-    async listDeployments(namespace: string = 'default') {
+    async listDeployments(namespace?: string) {
         const appsApi = this.kc.makeApiClient(k8s.AppsV1Api);
-        const deployments = await appsApi.listNamespacedDeployment(namespace);
-        return deployments.body.items;
+        if (!namespace || namespace === 'all') {
+            const deployments = await appsApi.listDeploymentForAllNamespaces();
+            return deployments.body.items;
+        } else {
+            const deployments = await appsApi.listNamespacedDeployment(namespace);
+            return deployments.body.items;
+        }
     }
 
     async getDeployment(name: string, namespace: string = 'default') {

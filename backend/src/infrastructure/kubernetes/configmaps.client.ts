@@ -8,10 +8,15 @@ export class ConfigMapsClient {
         this.kc.loadFromString(kubeconfigString);
     }
 
-    async listConfigMaps(namespace: string = 'default') {
+    async listConfigMaps(namespace?: string) {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
-        const configmaps = await coreApi.listNamespacedConfigMap(namespace);
-        return configmaps.body.items;
+        if (!namespace || namespace === 'all') {
+            const configmaps = await coreApi.listConfigMapForAllNamespaces();
+            return configmaps.body.items;
+        } else {
+            const configmaps = await coreApi.listNamespacedConfigMap(namespace);
+            return configmaps.body.items;
+        }
     }
 
     async getConfigMap(name: string, namespace: string = 'default') {
