@@ -80,6 +80,72 @@ export function ExplorerTab({ clusterId }: { clusterId: string }) {
       });
     });
 
+    // StatefulSets
+    const sts = streamData.statefulsets?.items || streamData.statefulsets || [];
+    sts.forEach((s: any) => {
+      const readyReplicas = s.status?.readyReplicas || 0;
+      const replicas = s.status?.replicas || 0;
+      items.push({
+        id: s.metadata?.uid || Math.random().toString(),
+        name: s.metadata?.name,
+        type: "StatefulSets",
+        namespace: s.metadata?.namespace,
+        status: `${readyReplicas}/${replicas} Ready`,
+        age: parseAge(s.metadata?.creationTimestamp),
+        cpu: "-",
+        mem: "-",
+        raw: s
+      });
+    });
+
+    // ConfigMaps
+    const cms = streamData.configmaps?.items || streamData.configmaps || [];
+    cms.forEach((c: any) => {
+      items.push({
+        id: c.metadata?.uid || Math.random().toString(),
+        name: c.metadata?.name,
+        type: "ConfigMaps",
+        namespace: c.metadata?.namespace,
+        status: "Active",
+        age: parseAge(c.metadata?.creationTimestamp),
+        cpu: "-",
+        mem: "-",
+        raw: c
+      });
+    });
+
+    // Secrets
+    const secrets = streamData.secrets?.items || streamData.secrets || [];
+    secrets.forEach((sec: any) => {
+      items.push({
+        id: sec.metadata?.uid || Math.random().toString(),
+        name: sec.metadata?.name,
+        type: "Secrets",
+        namespace: sec.metadata?.namespace,
+        status: sec.type || "Opaque",
+        age: parseAge(sec.metadata?.creationTimestamp),
+        cpu: "-",
+        mem: "-",
+        raw: sec
+      });
+    });
+
+    // Ingress
+    const ingresses = streamData.ingresses?.items || streamData.ingresses || [];
+    ingresses.forEach((ing: any) => {
+      items.push({
+        id: ing.metadata?.uid || Math.random().toString(),
+        name: ing.metadata?.name,
+        type: "Ingress",
+        namespace: ing.metadata?.namespace,
+        status: "Active",
+        age: parseAge(ing.metadata?.creationTimestamp),
+        cpu: "-",
+        mem: "-",
+        raw: ing
+      });
+    });
+
     return items;
   }, [streamData]);
 
