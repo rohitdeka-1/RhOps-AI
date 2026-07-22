@@ -7,7 +7,7 @@ function Shot({ src, alt }: { src: string; alt: string }) {
       height={868}
       loading="lazy"
       decoding="async"
-      className="block h-full w-full object-cover object-top"
+      className="block h-full w-full object-contain object-top"
     />
   );
 }

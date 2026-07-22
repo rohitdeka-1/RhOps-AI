@@ -88,7 +88,11 @@ export function AuthCard() {
   };
 
   const handleOAuth = async (provider: "github") => {
-    toast.info("GitHub login will be implemented later.");
+    if (provider === "github") {
+      const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+    }
   };
 
   const handleForgotPassword = async () => {

@@ -5,6 +5,7 @@ import ApplicationLayout from "./layouts/application-layout";
 import WorkspaceLayout02 from "./layouts/workspace-layout-02";
 import Landing from "./pages/landing";
 import Auth from "./pages/auth";
+import AuthCallback from "./pages/auth/callback";
 import Overview from "./pages/overview";
 import Employees from "./pages/employees";
 import NewEmployee from "./pages/employees/new";
@@ -47,6 +48,7 @@ const App = () => (
           <Route element={<ApplicationLayout />}>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
           </Route>
 
           {/* Demo routes — seed data, no auth */}

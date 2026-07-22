@@ -4,6 +4,7 @@ import { LoginController } from '../controllers/login.controller';
 import { MeController } from '../controllers/me.controller';
 import { LogoutController } from '../controllers/logout.controller';
 import { RefreshTokenController } from '../controllers/refresh-token.controller';
+import { GithubController } from '../controllers/github.controller';
 
 export default async function authRoutes(fastify: FastifyInstance) {
   const registerController = new RegisterController();
@@ -11,6 +12,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   const meController = new MeController();
   const logoutController = new LogoutController();
   const refreshTokenController = new RefreshTokenController();
+  const githubController = new GithubController();
 
   fastify.post('/register', {
     schema: {
@@ -49,5 +51,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   fastify.post('/logout', logoutController.logout);
   fastify.post('/refresh', refreshTokenController.refresh);
+  
+  fastify.post('/github', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['code'],
+        properties: {
+          code: { type: 'string' }
+        },
+        additionalProperties: false
+      }
+    }
+  }, githubController.handleCallback);
 
 }
