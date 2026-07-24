@@ -44,7 +44,7 @@ export class ClusterStreamService {
 
         // Fetch everything in parallel without crashing if one fails
         const [
-            podsRes, nodesRes, deploymentsRes, servicesRes, 
+            podsRes, nodesRes, deploymentsRes, servicesRes,
             namespacesRes, eventsRes, nodeMetricsRes, podMetricsRes,
             stsRes, pvcsRes, configmapsRes, secretsRes, ingressRes
         ] = await Promise.allSettled([

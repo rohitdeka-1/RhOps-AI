@@ -112,9 +112,35 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
   let failed = 0;
 
   filteredPods.forEach((p: any) => {
-    if (p.status?.phase === "Running" || p.status?.phase === "Succeeded") running++;
-    else if (p.status?.phase === "Pending") pending++;
-    else failed++;
+    let status = p.status?.phase || "Unknown";
+    let hasError = false;
+
+    const containerStatuses = [
+      ...(p.status?.initContainerStatuses || []),
+      ...(p.status?.containerStatuses || []),
+      ...(p.status?.ephemeralContainerStatuses || [])
+    ];
+    
+    for (const cs of containerStatuses) {
+      if (cs.state?.waiting?.reason && cs.state.waiting.reason !== "ContainerCreating" && cs.state.waiting.reason !== "PodInitializing") {
+         hasError = true;
+         break;
+      }
+      if (cs.state?.terminated?.reason && cs.state.terminated.reason !== "Completed") {
+         hasError = true;
+         break;
+      }
+    }
+
+    if (hasError) {
+      failed++;
+    } else if (status === "Running" || status === "Succeeded") {
+      running++;
+    } else if (status === "Pending" || status === "ContainerCreating" || status === "PodInitializing") {
+      pending++;
+    } else {
+      failed++;
+    }
   });
 
   const podStatusData = [
@@ -382,7 +408,7 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
           {/* Pod Status Distribution */}
           <div className="bg-card rounded-xl border border-border shadow-sm p-5">
             <h2 className="font-semibold mb-6">Pod Status Distribution</h2>
-            <div className="h-[60px] w-full flex rounded-full overflow-hidden shadow-inner bg-muted">
+            <div className="h-[60px] w-full flex rounded-lg overflow-hidden shadow-inner bg-muted">
               {podStatusData.map(status => (
                 <div
                   key={status.name}

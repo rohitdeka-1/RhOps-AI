@@ -8,19 +8,21 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  email        String        @unique
-  username     String        @unique
-  password     String
-  name         String?
-  role         Role          @default(ROOT)
-  refreshToken RefreshToken?
-  projects     Project[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  cluster      Cluster[]
-  auditLogs    AuditLog[]
-  chatSessions ChatSession[]
+  id                   String        @id @default(uuid())
+  email                String        @unique
+  username             String        @unique
+  password             String
+  name                 String?
+  githubInstallationId String?
+  githubAccessToken    String?
+  role                 Role          @default(ROOT)
+  refreshToken         RefreshToken?
+  projects             Project[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  cluster              Cluster[]
+  auditLogs            AuditLog[]
+  chatSessions         ChatSession[]
 }
 
 model RefreshToken {
@@ -33,13 +35,21 @@ model RefreshToken {
 }
 
 model Project {
-  id        String    @id @default(uuid())
-  name      String
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clusters  Cluster[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                   String    @id @default(uuid())
+  name                 String
+  gitRepoUrl           String?
+  gitBranch            String?   @default("main")
+  manifestPath         String?   @default("k8s/deployment.yaml")
+  isPrivate            Boolean   @default(false)
+  gitToken             String?
+  githubInstallationId String?
+  yamlContent          String?   @db.Text
+  syncStatus           String?   @default("MANUAL")
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clusters             Cluster[]
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 model Cluster {

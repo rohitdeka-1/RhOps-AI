@@ -11,7 +11,7 @@ export default function WorkspaceLayout02() {
   const isOverview = pathname === "/overview";
   const isClusterView = pathname.startsWith("/cluster") || pathname.startsWith("/demo/cluster");
   const clusterId = searchParams.get("clusterId");
-  
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAiGlowing, setIsAiGlowing] = useState(true);
 
@@ -35,13 +35,16 @@ export default function WorkspaceLayout02() {
     };
   }, []);
 
+  const currentTab = searchParams.get("tab");
+  const showRightSidebar = isClusterView && clusterId && currentTab !== "ai";
+
   return (
     <div className="flex h-screen flex-col bg-muted">
       <WorkspaceTopBar02 />
-      
+
       <div className="flex flex-1 overflow-hidden">
         {(isOverview || isClusterView) && <WorkspaceSidebar />}
-        
+
         <div
           className="flex flex-1 flex-col overflow-hidden"
           style={!isOverview ? {
@@ -58,8 +61,8 @@ export default function WorkspaceLayout02() {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR (AI) - ONLY IN CLUSTER VIEW */}
-        {isClusterView && clusterId && (
+        {/* RIGHT SIDEBAR (AI) - ONLY IN CLUSTER VIEW (HIDDEN ON DEDICATED AI PAGE) */}
+        {showRightSidebar && (
           <>
             {isChatOpen ? (
               <aside className="w-[320px] lg:w-[350px] shrink-0 border-l border-border bg-background flex flex-col z-10 hidden md:flex animate-in slide-in-from-right-10 duration-300">
@@ -67,7 +70,7 @@ export default function WorkspaceLayout02() {
               </aside>
             ) : (
               <aside className={`w-16 shrink-0 border-l border-border bg-background flex flex-col items-center justify-center z-10 hidden md:flex ${isAiGlowing ? 'ai-sidebar-glow' : ''}`}>
-                <button 
+                <button
                   onClick={() => setIsChatOpen(true)}
                   className="w-full h-full hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors flex flex-col items-center justify-center gap-3 group relative z-10"
                   title="Open AI Assistant"

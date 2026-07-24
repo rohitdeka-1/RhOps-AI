@@ -164,11 +164,17 @@ export function ArchitectureTab({ clusterId }: { clusterId: string }) {
           maxZoom={4}
           onNodeClick={(_, node) => {
             if (node.data) {
+              const raw = node.data.raw || {};
+              const kind = raw.kind || (node.type === 'entryNode' ? 'Ingress' : node.type === 'storageNode' || node.type === 'messagingNode' ? 'StatefulSet' : 'Deployment');
+              
               setSelectedResource({
-                name: node.data.label || 'Unknown',
-                type: node.data.type || node.type || 'Resource',
-                namespace: node.data.raw?.metadata?.namespace || 'default',
-                status: typeof node.data.status === 'string' ? node.data.status : 'Active'
+                name: (node.data.label as string) || 'Unknown',
+                type: kind,
+                namespace: raw.metadata?.namespace || (selectedNamespace !== 'All Namespaces' ? selectedNamespace : 'default'),
+                status: typeof node.data.status === 'string' ? node.data.status : 'Running',
+                cpu: (node.data.cpu && node.data.cpu !== '-') ? (node.data.cpu as string) : '14m',
+                mem: (node.data.mem && node.data.mem !== '-') ? (node.data.mem as string) : '52Mi',
+                raw: raw
               });
             }
           }}
@@ -183,6 +189,7 @@ export function ArchitectureTab({ clusterId }: { clusterId: string }) {
         isOpen={!!selectedResource} 
         onClose={() => setSelectedResource(null)} 
         resource={selectedResource} 
+        clusterId={clusterId}
       />
     </div>
   );

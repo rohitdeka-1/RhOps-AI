@@ -4,7 +4,14 @@ import { IconBox, IconActivityHeartbeat } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
 
 function AppNode({ data }: { data: any }) {
-  const { label, status } = data;
+  const { label, status = "Running" } = data;
+
+  const isRunning = status === "Running" || status === "Active" || status === "Online";
+  const isWarning = status === "Warning" || status === "Pending";
+
+  const dotColor = isRunning ? "bg-emerald-500" : isWarning ? "bg-yellow-500" : "bg-red-500";
+  const textColor = isRunning ? "text-emerald-500" : isWarning ? "text-yellow-500" : "text-red-500";
+  const displayText = status === "Running" ? "Online" : status;
 
   return (
     <div className="relative group min-w-[220px] bg-[#1a1b1e] border border-[#2e3036] rounded-xl shadow-lg hover:border-primary/50 cursor-pointer overflow-hidden text-white flex flex-col">
@@ -16,16 +23,13 @@ function AppNode({ data }: { data: any }) {
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold truncate">{label}</h3>
-          <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider">{data.kind}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider">{data.kind || "Deployment"}</p>
         </div>
       </div>
 
       <div className="px-4 pb-4 flex items-center gap-2">
-        <span className={cn(
-          "size-2 rounded-full",
-          status === "Running" ? "bg-emerald-500" : status === "Pending" ? "bg-yellow-500" : "bg-red-500"
-        )}></span>
-        <span className="text-xs text-emerald-500 font-medium">Online</span>
+        <span className={cn("size-2 rounded-full", dotColor)}></span>
+        <span className={cn("text-xs font-medium", textColor)}>{displayText}</span>
       </div>
 
       <Handle type="source" position={Position.Right} className="w-1 h-1 opacity-0" />

@@ -2,8 +2,17 @@ import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { IconWorld, IconNetwork } from '@tabler/icons-react';
 
+import { cn } from '@/lib/utils';
+
 function EntryNode({ data }: { data: any }) {
-  const { label, type, host } = data; // type = 'Ingress' | 'LoadBalancer'
+  const { label, type, host, status = "Running" } = data; // type = 'Ingress' | 'LoadBalancer'
+
+  const isRunning = status === "Running" || status === "Active" || status === "Online";
+  const isWarning = status === "Warning" || status === "Pending";
+
+  const dotColor = isRunning ? "bg-emerald-500" : isWarning ? "bg-yellow-500" : "bg-red-500";
+  const textColor = isRunning ? "text-emerald-500" : isWarning ? "text-yellow-500" : "text-red-500";
+  const displayText = status === "Running" ? "Online" : status;
 
   return (
     <div className="relative group min-w-[220px] bg-[#1a1b1e] border border-[#2e3036] rounded-xl shadow-lg hover:border-primary/50 cursor-pointer overflow-hidden text-white flex flex-col">
@@ -20,8 +29,8 @@ function EntryNode({ data }: { data: any }) {
       </div>
 
       <div className="px-4 pb-4 flex items-center gap-2">
-        <span className="size-2 rounded-full bg-emerald-500"></span>
-        <span className="text-xs text-emerald-500 font-medium">Online</span>
+        <span className={cn("size-2 rounded-full", dotColor)}></span>
+        <span className={cn("text-xs font-medium", textColor)}>{displayText}</span>
       </div>
 
       <Handle type="source" position={Position.Right} className="w-1 h-1 opacity-0" />

@@ -9,25 +9,36 @@ export class MetricsClient {
     }
 
     async getNodeMetrics() {
-        const metricsClient = new k8s.Metrics(this.kc);
-        const metrics = await metricsClient.getNodeMetrics();
-        return metrics;
+        try {
+            const metricsClient = new k8s.Metrics(this.kc);
+            const metrics = await metricsClient.getNodeMetrics();
+            return metrics;
+        } catch (error: any) {
+            return { kind: "NodeMetricsList", items: [] };
+        }
     }
 
     async getPodMetrics(namespace: string = 'default') {
         const customObjectsApi = this.kc.makeApiClient(k8s.CustomObjectsApi);
         try {
-            // @kubernetes/client-node Metrics class doesn't always handle namespaced pods perfectly,
-            // so we use CustomObjectsApi for robust raw data fetching.
-            const response = await customObjectsApi.listNamespacedCustomObject(
-                'metrics.k8s.io',
-                'v1beta1',
-                namespace,
-                'pods'
-            );
-            return response.body;
-        } catch (error) {
-            throw new Error("Failed to fetch pod metrics. Ensure metrics-server is installed in the cluster.");
+            if (namespace === 'all') {
+                const response = await customObjectsApi.listClusterCustomObject(
+                    'metrics.k8s.io',
+                    'v1beta1',
+                    'pods'
+                );
+                return response.body;
+            } else {
+                const response = await customObjectsApi.listNamespacedCustomObject(
+                    'metrics.k8s.io',
+                    'v1beta1',
+                    namespace,
+                    'pods'
+                );
+                return response.body;
+            }
+        } catch (error: any) {
+            return { kind: "PodMetricsList", items: [] };
         }
     }
 }

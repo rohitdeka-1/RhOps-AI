@@ -12,9 +12,30 @@ export class CreateProjectController {
         try {
             const userId = (request.user as any).id;
 
-            const { name } = request.body as { name: string };
+            const { name, gitRepoUrl, gitBranch, manifestPath, isPrivate, gitToken, githubInstallationId, yamlContent, syncStatus } = request.body as {
+                name: string;
+                gitRepoUrl?: string;
+                gitBranch?: string;
+                manifestPath?: string;
+                isPrivate?: boolean;
+                gitToken?: string;
+                githubInstallationId?: string;
+                yamlContent?: string;
+                syncStatus?: string;
+            };
 
-            const project = await this.createProjectService.create({ name, userId });
+            const project = await this.createProjectService.create({
+                name,
+                userId,
+                gitRepoUrl,
+                gitBranch,
+                manifestPath,
+                isPrivate,
+                gitToken,
+                githubInstallationId,
+                yamlContent,
+                syncStatus
+            });
 
             return reply.code(201).send({
                 success: true,

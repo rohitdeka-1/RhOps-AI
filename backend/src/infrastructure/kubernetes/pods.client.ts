@@ -33,8 +33,40 @@ export class PodsClient {
 
     async getLogs(name: string, namespace: string = 'default', container?: string) {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
-        const logs = await coreApi.readNamespacedPodLog(name, namespace, container);
-        return logs;
+        try {
+            let targetPodName = name;
+            const containerName = container && container.trim() !== '' ? container : undefined;
+
+            try {
+                const logsRes: any = await coreApi.readNamespacedPodLog(targetPodName, namespace, containerName);
+                if (typeof logsRes === 'string') return logsRes;
+                if (logsRes && typeof logsRes.body === 'string') return logsRes.body;
+                if (logsRes && typeof logsRes.data === 'string') return logsRes.data;
+                return typeof logsRes === 'object' ? JSON.stringify(logsRes, null, 2) : String(logsRes);
+            } catch (directErr: any) {
+                // If name is a deployment/statefulset name (e.g. 'redis', 'postgres', 'frontend'), find matching pod
+                const pods = await this.listPods(namespace);
+                const matchingPod = pods.find((p: any) => 
+                    p.metadata?.name === name ||
+                    p.metadata?.name?.startsWith(`${name}-`) ||
+                    p.metadata?.labels?.app === name ||
+                    p.metadata?.labels?.['app.kubernetes.io/name'] === name
+                );
+
+                if (matchingPod?.metadata?.name) {
+                    targetPodName = matchingPod.metadata.name;
+                    const logsRes: any = await coreApi.readNamespacedPodLog(targetPodName, namespace, containerName);
+                    if (typeof logsRes === 'string') return logsRes;
+                    if (logsRes && typeof logsRes.body === 'string') return logsRes.body;
+                    if (logsRes && typeof logsRes.data === 'string') return logsRes.data;
+                    return typeof logsRes === 'object' ? JSON.stringify(logsRes, null, 2) : String(logsRes);
+                }
+                throw directErr;
+            }
+        } catch (error: any) {
+            console.error(`Error reading logs for ${name} in ${namespace}:`, error?.message || error);
+            throw new Error(error?.body?.message || error?.message || `Failed to fetch logs for ${name}`);
+        }
     }
 
     async restartPod(name: string, namespace: string = 'default') {

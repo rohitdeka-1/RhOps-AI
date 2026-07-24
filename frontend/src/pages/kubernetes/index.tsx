@@ -6,14 +6,15 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { OverviewTab } from "./tabs/overview-tab";
 import { ExplorerTab } from "./tabs/explorer-tab";
 import { ArchitectureTab } from "./tabs/architecture-tab";
+import { AiAssistantTab } from "./tabs/ai-assistant-tab";
 
 export default function Kubernetes() {
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get("clusterId");
   const tab = searchParams.get("tab") || "overview";
-  
+
   const { data: clusters, isLoading } = useClusters();
-  
+
   const projectCluster = clusters?.find((c) => c.projectId === projectId);
 
   if (isLoading) {
@@ -48,6 +49,8 @@ export default function Kubernetes() {
         return <ExplorerTab clusterId={projectCluster.id} />;
       case "architecture":
         return <ArchitectureTab clusterId={projectCluster.id} />;
+      case "ai":
+        return <AiAssistantTab clusterId={projectCluster.id} cluster={projectCluster} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
@@ -60,7 +63,7 @@ export default function Kubernetes() {
 
   return (
     <div className="flex flex-1 h-full overflow-hidden relative">
-      <main className="flex-1 overflow-auto p-6 bg-muted/20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <main className={`flex-1 overflow-auto bg-muted/20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${tab === 'ai' ? 'p-0' : 'p-6'}`}>
         {renderTab()}
       </main>
     </div>

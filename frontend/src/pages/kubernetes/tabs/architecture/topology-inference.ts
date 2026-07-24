@@ -58,7 +58,9 @@ export function inferTopology(streamData: any, selectedNamespace: string, showSy
             data: {
                 label: ing.metadata.name,
                 type: 'Ingress',
-                host: ing.spec?.rules?.[0]?.host || 'Unknown Host'
+                host: ing.spec?.rules?.[0]?.host || 'Unknown Host',
+                status: 'Active',
+                raw: ing
             },
             position: { x: 0, y: 0 }
         });
@@ -150,6 +152,32 @@ export function inferTopology(streamData: any, selectedNamespace: string, showSy
                 });
             });
         });
+
+        // Analyze Annotations for explicit connections
+        const annotations = d.metadata?.annotations || {};
+        const dependsOn = annotations['rhops.ai/depends-on'];
+        if (dependsOn) {
+            const deps = dependsOn.split(',').map((s: string) => s.trim());
+            deps.forEach((svcName: string) => {
+                const targetId = serviceToWorkload.get(svcName) || `standalone-svc-${svcName}`;
+                if (targetId !== depId) {
+                    edges.push({
+                        id: `edge-annotation-${depId}-${targetId}`,
+                        source: depId,
+                        target: targetId,
+                        animated: false,
+                        type: 'smoothstep',
+                        style: { stroke: '#525252', strokeWidth: 1.5, strokeDasharray: '4 4' },
+                        markerEnd: {
+                            type: dagre.graphlib.Graph ? 'arrowclosed' : 'arrowclosed',
+                            width: 15,
+                            height: 15,
+                            color: '#525252',
+                        }
+                    });
+                }
+            });
+        }
     });
 
     // 3. Create Standalone Service Nodes (Databases, etc that have no deployment but are services)

@@ -4,6 +4,7 @@ import { ListProjectController } from "../controllers/list.controller";
 import { GetProjectController } from "../controllers/get.controller";
 import { UpdateProjectController } from "../controllers/update.controller";
 import { DeleteProjectController } from "../controllers/delete.controller";
+import { GithubAppController } from "../controllers/github.controller";
 
 export default async function projectRoutes(fastify: FastifyInstance) {
     const createProject = new CreateProjectController();
@@ -11,6 +12,15 @@ export default async function projectRoutes(fastify: FastifyInstance) {
     const getProject = new GetProjectController();
     const updateProject = new UpdateProjectController();
     const deleteProject = new DeleteProjectController();
+    const githubApp = new GithubAppController();
+
+    fastify.get('/github/install', githubApp.install);
+    // Cookies are sent automatically if SameSite is Lax or None. We should use authenticate if it relies on session cookie.
+    fastify.get('/github/callback', { preValidation: [fastify.authenticate] }, githubApp.callback);
+
+    fastify.get('/github/repos', {
+        preValidation: [fastify.authenticate]
+    }, githubApp.getRepos);
 
     fastify.post('/create', {
         preValidation: [fastify.authenticate],

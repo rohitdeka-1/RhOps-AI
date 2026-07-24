@@ -3,14 +3,29 @@ import { prisma } from "../../../config/prisma";
 export class ProjectRepository {
 
     async createProject(data: {
-        name: string,
-        userId: string,
-
+        name: string;
+        userId: string;
+        gitRepoUrl?: string;
+        gitBranch?: string;
+        manifestPath?: string;
+        isPrivate?: boolean;
+        gitToken?: string;
+        githubInstallationId?: string;
+        yamlContent?: string;
+        syncStatus?: string;
     }) {
         return await prisma.project.create({
             data: {
                 name: data.name,
                 userId: data.userId,
+                gitRepoUrl: data.gitRepoUrl,
+                gitBranch: data.gitBranch,
+                manifestPath: data.manifestPath,
+                isPrivate: data.isPrivate ?? false,
+                gitToken: data.gitToken,
+                githubInstallationId: data.githubInstallationId,
+                yamlContent: data.yamlContent,
+                syncStatus: data.syncStatus,
             }
         })
     }
@@ -35,14 +50,24 @@ export class ProjectRepository {
         });
     }
 
-    async updateProject(id: string, userId: string, data: { name: string }) {
+    async updateProject(id: string, userId: string, data: {
+        name?: string;
+        gitRepoUrl?: string;
+        gitBranch?: string;
+        manifestPath?: string;
+        isPrivate?: boolean;
+        gitToken?: string;
+        githubInstallationId?: string;
+        yamlContent?: string;
+        syncStatus?: string;
+    }) {
         return await prisma.project.updateMany({
             where: {
                 id: id,
                 userId: userId
             },
             data: {
-                name: data.name
+                ...data
             }
         });
     }

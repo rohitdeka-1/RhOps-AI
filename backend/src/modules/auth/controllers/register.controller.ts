@@ -32,7 +32,7 @@ export class RegisterController {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 15 * 60
       });
 
@@ -40,7 +40,7 @@ export class RegisterController {
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60
       });
 
