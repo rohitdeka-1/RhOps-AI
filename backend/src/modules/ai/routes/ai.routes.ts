@@ -1,10 +1,10 @@
 import { FastifyInstance } from "fastify";
-import { AiController } from "../controllers/ai.controller";
+import { ChatController } from "../controllers/chat.controller";
 
 export async function aiRoutes(fastify: FastifyInstance) {
-    const aiController = new AiController();
+    const chatController = new ChatController();
 
-    fastify.post("/chat", { preValidation: [fastify.authenticate] }, aiController.chat);
-    fastify.get("/sessions", { preValidation: [fastify.authenticate] }, aiController.getSessions);
-    fastify.delete("/sessions/:id", { preValidation: [fastify.authenticate] }, aiController.deleteSession);
+    fastify.post("/chat", { preValidation: [fastify.authenticate] }, chatController.chat);
+    fastify.get("/sessions", { preValidation: [fastify.authenticate] }, chatController.getSessions);
+    fastify.delete("/sessions/:id", { preValidation: [fastify.authenticate] }, chatController.deleteSession);
 }
