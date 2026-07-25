@@ -367,7 +367,7 @@ export function ExplorerTab({ clusterId }: { clusterId: string }) {
               placeholder={`Search ${activeType.toLowerCase()}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-muted/50 border border-border rounded-md py-1.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 transition-colors"
+              className="w-full bg-transparent border border-border/60 rounded-md py-1.5 pl-9 pr-4 text-sm font-medium font-sans focus:outline-none focus:ring-1 focus:ring-primary/50 transition-colors"
             />
           </div>
           <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium border border-border rounded-md hover:bg-muted transition-colors text-muted-foreground">

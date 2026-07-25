@@ -113,8 +113,8 @@ a > svg,
 }
 
 /* Icons inside filled primary surfaces keep their inherited color */
-.bg-primary svg,
-[data-variant="default"] svg {
+button.bg-primary > svg,
+[data-variant="default"] > svg {
   color: inherit;
 }
 

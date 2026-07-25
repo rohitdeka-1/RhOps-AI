@@ -216,88 +216,43 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
       {/* LEFT / CENTER: Google Gemini AI Main Interface */}
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
 
-        {/* TOP HEADER */}
-        <div className="px-6 py-4 border-b border-border bg-card/20 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="size-8 rounded-lg bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-md">
-              <IconSparkles className="size-5" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-                RhOps AI Assistant
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  Gemini 3.5 Pro
-                </span>
-              </h1>
-              <p className="text-xs text-muted-foreground">Connected to cluster: <span className="font-mono text-foreground">{cluster?.name || "Production"}</span></p>
-            </div>
-          </div>
-        </div>
-
         {/* MESSAGES AREA / HERO VIEW */}
         <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
           {messages.length === 0 ? (
             /* CENTER HERO SCREEN (Google AI style) */
-            <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-3xl mx-auto w-full my-auto text-center space-y-8 animate-in fade-in zoom-in-95 duration-300">
-
-              {/* Gemini Hero Header */}
-              <div className="space-y-3 flex flex-col items-center">
-                <div className="size-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-xl shadow-primary/20 animate-pulse">
-                  <IconSparkles className="size-9" />
-                </div>
-                <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-                  Hello, <span className="bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-500 bg-clip-text text-transparent">{user?.name || user?.username || "Operator"}</span>
-                </h2>
-                <p className="text-muted-foreground text-sm max-w-lg leading-relaxed">
-                  How can I assist your Kubernetes cluster today? Ask anything about logs, pod diagnostics, or manifest generation.
-                </p>
-              </div>
+            <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-3xl mx-auto w-full my-auto text-center animate-in fade-in zoom-in-95 duration-300">
 
               {/* CENTER SEARCH / PROMPT INPUT */}
-              <div className="w-full max-w-2xl bg-card border border-border/80 rounded-2xl p-3 shadow-xl focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendPrompt(input);
-                    }
-                  }}
-                  placeholder="Ask RhOps AI about your cluster..."
-                  rows={2}
-                  className="w-full bg-transparent text-foreground p-2 text-sm focus:outline-none placeholder:text-muted-foreground resize-none"
-                />
-                <div className="flex items-center justify-between pt-2 border-t border-border/40">
-                  <span className="text-[11px] text-muted-foreground px-2">Press Enter to send</span>
-                  <button
-                    onClick={() => handleSendPrompt(input)}
-                    disabled={!input.trim() || isGenerating}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all shadow-md"
-                  >
-                    <span>Send</span>
-                    <IconArrowUp className="size-4" stroke={2.5} />
-                  </button>
+              <div className="w-full max-w-2xl relative group">
+                {/* Glowing intelligence aura */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-2xl blur-md opacity-30 group-focus-within:opacity-75 transition duration-500"></div>
+                
+                <div className="relative w-full bg-card border border-white/10 dark:border-white/5 rounded-2xl p-3 shadow-2xl flex flex-col">
+                  <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendPrompt(input);
+                      }
+                    }}
+                    placeholder="Ask RhOps AI about your cluster..."
+                    rows={2}
+                    className="w-full bg-transparent text-foreground p-3 text-sm focus:outline-none placeholder:text-muted-foreground resize-none custom-scrollbar"
+                  />
+                  <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                    <span className="text-[11px] text-muted-foreground px-2 font-medium">Press Enter to send</span>
+                    <button
+                      onClick={() => handleSendPrompt(input)}
+                      disabled={!input.trim() || isGenerating}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-all shadow-md"
+                    >
+                      <span>Send</span>
+                      <IconArrowUp className="size-4" stroke={2.5} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              {/* SUGGESTED PROMPT CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl text-left">
-                {suggestedPrompts.map((item, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSendPrompt(item.prompt)}
-                    className="p-3.5 bg-card/60 hover:bg-card border border-border rounded-xl shadow-sm hover:border-primary/40 transition-all group flex flex-col justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={cn("p-1.5 rounded-lg border", item.color)}>
-                        <item.icon className="size-4" />
-                      </div>
-                      <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">{item.title}</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">{item.prompt}</p>
-                  </button>
-                ))}
               </div>
 
             </div>
@@ -319,18 +274,19 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
                   )}
 
                   <div className={cn(
-                    "group relative p-4 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm",
+                    "group relative px-4 py-2.5 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm flex flex-col",
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-tr-xs"
-                      : "bg-card border border-border rounded-tl-xs text-foreground"
+                      ? "bg-primary text-primary-foreground rounded-tr-sm"
+                      : "bg-card border border-border rounded-tl-sm text-foreground"
                   )}>
                     <div className="whitespace-pre-wrap select-text font-sans">
                       {msg.content}
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/20 text-[10px] opacity-70">
-                      <span>{msg.timestamp}</span>
-                      {msg.role === "assistant" && (
+                    {/* Only show the divider and tools for the assistant to keep user bubbles tight */}
+                    {msg.role === "assistant" && (
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/20 text-[10px] opacity-70">
+                        <span>{msg.timestamp}</span>
                         <button
                           onClick={() => handleCopyMessage(msg.id, msg.content)}
                           className="hover:text-primary transition-colors p-1"
@@ -338,8 +294,13 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
                         >
                           {copiedMsgId === msg.id ? <IconCheck className="size-3 text-emerald-400" /> : <IconCopy className="size-3" />}
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                    {msg.role === "user" && (
+                      <div className="text-[10px] opacity-60 mt-1 self-end text-primary-foreground">
+                        {msg.timestamp}
+                      </div>
+                    )}
                   </div>
 
                   {msg.role === "user" && (
@@ -414,7 +375,7 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
         </div>
 
         {/* History List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
           {conversations.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground text-xs italic">
               No previous chats found
@@ -427,7 +388,7 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
                   key={conv.id}
                   onClick={() => handleSelectConv(conv.id)}
                   className={cn(
-                    "p-3 rounded-xl border text-xs cursor-pointer transition-all flex items-start justify-between gap-2 group",
+                    "px-3 py-2.5 rounded-xl border text-xs cursor-pointer transition-all flex items-start justify-between gap-2 group",
                     isActive
                       ? "bg-primary/10 border-primary/30 text-foreground font-medium shadow-sm"
                       : "bg-card/60 hover:bg-card border-border/50 text-muted-foreground hover:text-foreground"

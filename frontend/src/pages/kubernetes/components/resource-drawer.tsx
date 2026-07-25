@@ -429,14 +429,14 @@ export function ResourceDrawer({ isOpen, onClose, resource, clusterId }: Resourc
             <div className="flex flex-col h-[520px] bg-[#0D1117] border border-border rounded-xl shadow-sm overflow-hidden text-xs font-mono">
               {/* Log Toolbar */}
               <div className="p-3 bg-[#161B22] border-b border-[#30363D] flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1 max-w-xs">
-                  <IconSearch className="size-4 text-gray-400" />
+                <div className="relative flex items-center flex-1 max-w-xs">
+                  <IconSearch className="absolute left-2.5 size-4 text-gray-400" />
                   <input 
                     type="text" 
-                    placeholder="Search logs..." 
                     value={logSearch}
                     onChange={(e) => setLogSearch(e.target.value)}
-                    className="w-full bg-[#0D1117] border border-[#30363D] text-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-primary"
+                    className="w-full bg-muted/80 dark:bg-muted/50 border-transparent rounded-md py-1.5 pl-9 pr-4 text-xs font-medium font-sans focus:outline-none focus:ring-1 focus:ring-primary/50 text-foreground"
+                    placeholder="Search logs..."
                   />
                 </div>
 

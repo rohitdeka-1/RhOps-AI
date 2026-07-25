@@ -42,7 +42,7 @@ export function Blankslate({ onCreate }: { onCreate: () => void }) {
               </p>
             </div>
             <Button onClick={onCreate}>
-              <IconPlus className="size-4 mr-2" />
+              <IconPlus className="size-4" />
               Create your first project
             </Button>
           </CardContent>

@@ -12,7 +12,7 @@ export function PageHeader({ onCreate, showCreate }: { onCreate: () => void; sho
       </div>
       {showCreate && (
         <Button onClick={onCreate} size="sm">
-          <IconPlus className="size-4 mr-2" />
+          <IconPlus className="size-4" />
           New Project
         </Button>
       )}

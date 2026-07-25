@@ -80,7 +80,7 @@ export class GithubAppController {
       }
 
       const repos = await this.githubAppService.getInstallationRepositories(installationId);
-      return reply.send({ data: repos });
+      return reply.send({ data: repos, installationId });
     } catch (error: any) {
       request.log.error(error);
       return reply.code(500).send({ message: "Failed to fetch repositories" });

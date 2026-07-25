@@ -32,9 +32,12 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   const [yamlContent, setYamlContent] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [githubInstallationId, setGithubInstallationId] = useState("");
 
   const { mutateAsync: createProject, isPending } = useCreateProject();
-  const { data: repos, isError: noGithubApp, isLoading: isReposLoading } = useGithubRepos();
+  const { data: githubData, isError: noGithubApp, isLoading: isReposLoading } = useGithubRepos();
+  const repos = githubData?.repos;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,6 +57,10 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     setGitRepoUrl(repo.url);
     setGitRepoName(repo.fullName);
     setGitBranch(repo.defaultBranch || "main");
+    setIsPrivate(repo.private || false);
+    if (githubData?.installationId) {
+      setGithubInstallationId(githubData.installationId);
+    }
     // Default project name to repo name (without owner)
     setName(repo.fullName.split('/')[1] || repo.fullName);
     setStep("CONFIGURE_GITHUB");
@@ -69,6 +76,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
         gitRepoUrl: gitRepoUrl.trim() || undefined,
         gitBranch: gitBranch.trim() || "main",
         manifestPath: manifestPath.trim() || "k8s/deployment.yaml",
+        isPrivate: isPrivate,
+        githubInstallationId: githubInstallationId || undefined,
         yamlContent: yamlContent.trim() || undefined,
         syncStatus: gitRepoUrl ? "SYNCED" : yamlContent ? "MANUAL" : "PENDING",
       });
@@ -91,6 +100,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
     setYamlContent("");
     setFileName(null);
     setSearchQuery("");
+    setIsPrivate(false);
+    setGithubInstallationId("");
   };
 
   const filteredRepos = repos?.filter((r) => 
@@ -152,7 +163,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                           placeholder="Search repositories..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-9 h-10 bg-muted/30"
+                          className="pl-9 h-10 bg-transparent border border-border/60 text-sm font-medium font-sans focus-visible:ring-1 focus-visible:ring-primary/50"
                         />
                       </div>
                       <Button 
@@ -172,7 +183,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                           Loading your repositories...
                         </div>
                       ) : filteredRepos && filteredRepos.length > 0 ? (
-                        <div className="overflow-y-auto divide-y divide-border/60">
+                        <div className="overflow-y-auto custom-scrollbar divide-y divide-border/60">
                           {filteredRepos.map((repo) => (
                             <div key={repo.id} className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
                               <div className="flex items-center gap-3 overflow-hidden">

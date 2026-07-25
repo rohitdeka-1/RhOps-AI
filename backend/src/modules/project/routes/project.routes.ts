@@ -28,7 +28,15 @@ export default async function projectRoutes(fastify: FastifyInstance) {
             body: {
                 type: 'object',
                 properties: {
-                    name: { type: 'string' }
+                    name: { type: 'string' },
+                    gitRepoUrl: { type: 'string' },
+                    gitBranch: { type: 'string' },
+                    manifestPath: { type: 'string' },
+                    isPrivate: { type: 'boolean' },
+                    gitToken: { type: 'string' },
+                    githubInstallationId: { type: 'string' },
+                    yamlContent: { type: 'string' },
+                    syncStatus: { type: 'string' }
                 },
                 required: ['name'],
                 additionalProperties: false
@@ -66,7 +74,15 @@ export default async function projectRoutes(fastify: FastifyInstance) {
             body: {
                 type: 'object',
                 properties: {
-                    name: { type: 'string' }
+                    name: { type: 'string' },
+                    gitRepoUrl: { type: 'string' },
+                    gitBranch: { type: 'string' },
+                    manifestPath: { type: 'string' },
+                    isPrivate: { type: 'boolean' },
+                    gitToken: { type: 'string' },
+                    githubInstallationId: { type: 'string' },
+                    yamlContent: { type: 'string' },
+                    syncStatus: { type: 'string' }
                 },
                 required: ['name'],
                 additionalProperties: false

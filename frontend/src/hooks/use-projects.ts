@@ -71,8 +71,8 @@ export function useGithubRepos() {
   return useQuery({
     queryKey: ["github-repos"],
     queryFn: async () => {
-      const res = await api.get<{ data: any[] }>("/projects/github/repos");
-      return res.data.data;
+      const res = await api.get<{ data: any[], installationId: string }>("/projects/github/repos");
+      return { repos: res.data.data, installationId: res.data.installationId };
     },
     retry: false,
   });

@@ -53,9 +53,9 @@ export function FilterBar() {
         <IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search by name, role, or location…"
-          className="pl-9"
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
+          className="h-9 w-full pl-9 bg-muted/80 dark:bg-muted/50 border-transparent text-sm font-medium font-sans"
         />
       </div>
       <Select
