@@ -7,6 +7,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { api } from "@/lib/api";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: string;
@@ -60,50 +62,38 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
-  // Initial mock history
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: "conv-1",
-      title: "Cluster Health & Crash Loop Check",
-      timestamp: "Today, 6:15 PM",
-      messages: [
-        {
-          id: "m1",
-          role: "user",
-          content: "Check logs for crash-looping or failing pods in namespace qrt.",
-          timestamp: "6:15 PM"
-        },
-        {
-          id: "m2",
-          role: "assistant",
-          content: "### Cluster Diagnostic Summary\n\n- **Cluster Name:** `qrt` (Kind local)\n- **Active Pods:** 8 Running, 0 Failed\n- **Identified Warnings:** 2 pods in `backend` deployment reported Prisma TLS connection retry warnings during startup, but successfully established connection.\n\nAll services (`backend`, `frontend`, `postgres`, `redis`) are currently operating normally on port 8080.",
-          timestamp: "6:15 PM"
-        }
-      ]
-    },
-    {
-      id: "conv-2",
-      title: "Prisma & Redis TLS Debugging",
-      timestamp: "Yesterday",
-      messages: [
-        {
-          id: "m3",
-          role: "user",
-          content: "Why did backend report PrismaClientKnownRequestError SSL connection issue?",
-          timestamp: "Yesterday"
-        },
-        {
-          id: "m4",
-          role: "assistant",
-          content: "The Prisma client attempted to establish a TLS/SSL connection with PostgreSQL (`postgres-0`), but `postgres` was configured without SSL. Adding `?sslmode=disable` to `DATABASE_URL` resolved the fallback negotiation.",
-          timestamp: "Yesterday"
-        }
-      ]
-    }
-  ]);
-
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch sessions on mount
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const res = await api.get(`/ai/sessions${clusterId ? `?clusterId=${clusterId}` : ''}`);
+        if (res.data && res.data.data) {
+          const formatted = res.data.data.map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            timestamp: new Date(s.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            messages: s.messages.map((m: any) => ({
+              id: m.id,
+              role: m.role.toLowerCase() === 'user' ? 'user' : 'assistant',
+              content: m.content,
+              timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }))
+          }));
+          setConversations(formatted);
+          if (formatted.length > 0) {
+            setActiveConvId(formatted[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch AI sessions", err);
+      }
+    };
+    fetchSessions();
+  }, [clusterId]);
 
   // Active messages list
   const activeConv = conversations.find(c => c.id === activeConvId);
@@ -127,11 +117,16 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
     setInput("");
   };
 
-  const handleDeleteConv = (e: React.MouseEvent, convId: string) => {
+  const handleDeleteConv = async (e: React.MouseEvent, convId: string) => {
     e.stopPropagation();
-    setConversations(prev => prev.filter(c => c.id !== convId));
-    if (activeConvId === convId) {
-      setActiveConvId(null);
+    try {
+        await api.delete(`/ai/sessions/${convId}`);
+        setConversations(prev => prev.filter(c => c.id !== convId));
+        if (activeConvId === convId) {
+            setActiveConvId(null);
+        }
+    } catch (err) {
+        console.error("Failed to delete session", err);
     }
   };
 
@@ -171,37 +166,51 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
     setInput("");
     setIsGenerating(true);
 
-    // Simulate Gemini AI Response
-    setTimeout(() => {
-      let aiContent = "";
+    try {
+        const response = await api.post('/ai/chat', {
+            message: text,
+            clusterId,
+            sessionId: activeConvId
+        });
 
-      const lower = text.toLowerCase();
-      if (lower.includes("health") || lower.includes("check")) {
-        aiContent = `### 🌟 Gemini Cluster Diagnostics\n\nI have scanned cluster **${cluster?.name || "Production"}**:\n\n- **Status:** Healthy (100% workloads ready)\n- **Pods Running:** 8 Pods across namespace \`qrt\`\n- **Memory & CPU:** Utilization is within nominal thresholds (14m CPU / 52Mi RAM average).\n\nNo active crash loops or node starvation detected.`;
-      } else if (lower.includes("crash") || lower.includes("log") || lower.includes("debug")) {
-        aiContent = `### 🔍 Log Stream Diagnostic\n\nAnalyzed latest logs for **backend-646d8c64b4** & **postgres-0**:\n\n1. **PostgreSQL:** Listening on \`0.0.0.0:5432\` — ready to accept TCP connections.\n2. **Backend:** Database schema synchronized with Prisma v6.19.3.\n\nEverything is operational. No critical exceptions recorded.`;
-      } else if (lower.includes("manifest") || lower.includes("yaml")) {
-        aiContent = `Here is a production-ready Kubernetes deployment manifest:\n\n\`\`\`yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: sample-app\n  namespace: qrt\n  labels:\n    app: sample-app\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: sample-app\n  template:\n    metadata:\n      labels:\n        app: sample-app\n    spec:\n      containers:\n      - name: web\n        image: nginx:alpine\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: "50m"\n            memory: "64Mi"\n\`\`\``;
-      } else {
-        aiContent = `I am analyzing your request regarding **${text}** across cluster **${cluster?.name || "Production"}**.\n\nAll node telemetry, pods, and streaming services are active. Let me know if you need specific manifest generations or deep log diagnostics!`;
-      }
-
-      const aiMessage: Message = {
-        id: "msg-" + (Date.now() + 1),
-        role: "assistant",
-        content: aiContent,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      setConversations(prev => prev.map(c => {
-        if (c.id === targetConvId) {
-          return { ...c, messages: [...c.messages, aiMessage] };
+        const { session, message: aiMessage } = response.data;
+        
+        // If it was a new conversation, update the ID
+        if (!activeConvId) {
+            setActiveConvId(session.id);
+            setConversations(prev => prev.map(c => {
+                if (c.id === targetConvId) {
+                    return { ...c, id: session.id, title: session.title, messages: [...c.messages, aiMessage] };
+                }
+                return c;
+            }));
+        } else {
+            setConversations(prev => prev.map(c => {
+                if (c.id === targetConvId) {
+                    return { ...c, messages: [...c.messages, aiMessage] };
+                }
+                return c;
+            }));
         }
-        return c;
-      }));
 
-      setIsGenerating(false);
-    }, 1200);
+    } catch (err) {
+        console.error("Failed to send message", err);
+        // Add an error message
+        const errorMsg: Message = {
+            id: "msg-" + Date.now(),
+            role: "assistant",
+            content: "Sorry, I encountered an error communicating with the AI service. Please try again.",
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setConversations(prev => prev.map(c => {
+            if (c.id === targetConvId) {
+                return { ...c, messages: [...c.messages, errorMsg] };
+            }
+            return c;
+        }));
+    } finally {
+        setIsGenerating(false);
+    }
   };
 
   const handleCopyMessage = (msgId: string, content: string) => {
@@ -277,11 +286,37 @@ export function AiAssistantTab({ clusterId, cluster }: AiAssistantTabProps) {
                     "group relative px-4 py-2.5 rounded-2xl max-w-[85%] text-sm leading-relaxed shadow-sm flex flex-col",
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground rounded-tr-sm"
-                      : "bg-card border border-border rounded-tl-sm text-foreground"
+                      : "bg-card border border-border rounded-tl-sm text-foreground overflow-x-auto"
                   )}>
-                    <div className="whitespace-pre-wrap select-text font-sans">
-                      {msg.content}
-                    </div>
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none break-words text-foreground">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code({node, inline, className, children, ...props}: any) {
+                              const match = /language-(\w+)/.exec(className || '')
+                              return !inline && match ? (
+                                <div className="relative mt-2 mb-2 rounded-md bg-muted p-3 border border-border overflow-x-auto font-mono text-[13px]">
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                </div>
+                              ) : (
+                                <code className="bg-muted px-1.5 py-0.5 rounded-md font-mono text-[13px]" {...props}>
+                                  {children}
+                                </code>
+                              )
+                            }
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap select-text font-sans">
+                        {msg.content}
+                      </div>
+                    )}
 
                     {/* Only show the divider and tools for the assistant to keep user bubbles tight */}
                     {msg.role === "assistant" && (

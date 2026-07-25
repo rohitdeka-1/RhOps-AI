@@ -44,7 +44,7 @@ export default async function websocketsRoutes(fastify: FastifyInstance) {
                 socket.on('close', () => {
                     if (interval) clearInterval(interval);
                 });
-                
+
                 socket.on('error', () => {
                     if (interval) clearInterval(interval);
                 });
