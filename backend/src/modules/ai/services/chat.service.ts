@@ -5,6 +5,7 @@ import { PrometheusClient } from "../../../infrastructure/monitoring/prometheus.
 import { LokiClient } from "../../../infrastructure/monitoring/loki.client";
 import { buildSystemPrompt } from "../prompts/system.prompt";
 import { getToolDefinitions, executeTool } from "../tools";
+import { decrypt } from "../../../utils/encryption.util";
 
 export class ChatService {
     private aiProvider: IAiProvider | null = null;
@@ -50,13 +51,15 @@ export class ChatService {
         let promClient: PrometheusClient | null = null;
         let lokiClient: LokiClient | null = null;
         let clusterName: string | null = null;
+        let kubeconfigString: string | null = null;
 
         if (clusterId) {
             const cluster = await prisma.cluster.findUnique({ where: { id: clusterId } });
             if (cluster) {
                 clusterName = cluster.name;
-                promClient = new PrometheusClient(cluster.kubeconfig);
-                lokiClient = new LokiClient(cluster.kubeconfig);
+                kubeconfigString = decrypt(cluster.kubeconfig);
+                promClient = new PrometheusClient(kubeconfigString);
+                lokiClient = new LokiClient(kubeconfigString);
             }
         }
 
@@ -71,20 +74,23 @@ export class ChatService {
         const tools = getToolDefinitions();
 
         let response = await aiProvider.chatCompletion(openAiMessages, tools);
+        console.log("response::::::", response);
         let responseMessage = response.choices[0].message;
-
+        console.log("responseMessage::::::", responseMessage);
         if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
             const toolOutputs = [];
             for (const toolCall of responseMessage.tool_calls) {
                 if (toolCall.type !== 'function') continue;
-                
+
                 const result = await executeTool(
-                    toolCall.function.name, 
-                    toolCall.function.arguments, 
-                    promClient, 
-                    lokiClient
+                    toolCall.function.name,
+                    toolCall.function.arguments,
+                    promClient,
+                    lokiClient,
+                    kubeconfigString,
+                    ['*'] // Cluster admin access by default based on current schema
                 );
-                
+
                 toolOutputs.push({ toolCallId: toolCall.id, result });
             }
 

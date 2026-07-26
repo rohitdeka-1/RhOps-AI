@@ -283,7 +283,7 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
           <div className="p-5">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">CPU Usage (%)</h3>
             <div className="h-[180px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
                 <AreaChart data={cpuData} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
@@ -305,7 +305,7 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
           <div className="p-5">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Memory Usage (GB)</h3>
             <div className="h-[180px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
                 <AreaChart data={memData} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorMem" x1="0" y1="0" x2="0" y2="1">
@@ -327,7 +327,7 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
           <div className="p-5">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Network I/O (MB/s)</h3>
             <div className="h-[180px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
                 <AreaChart data={networkData} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
@@ -369,7 +369,7 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
               <div className="p-5">
                 <h3 className="text-xs font-medium text-muted-foreground mb-4 uppercase tracking-wider">CPU Allocation (m)</h3>
                 <div className="h-[200px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" debounce={100}>
                     <BarChart data={namespaceResourceData} layout="vertical" margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
                       <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#a1a1aa" }} />
@@ -446,7 +446,7 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
               <h2 className="font-semibold">Warning & Error Rate</h2>
             </div>
             <div className="h-[140px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" debounce={100}>
                 <LineChart data={eventRateData} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                   <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#a1a1aa" }} dy={10} />
