@@ -14,7 +14,32 @@ export const getClusterSummaryToolDefinition = {
     }
 };
 
-export async function executeGetClusterSummaryTool(args: any, kubeconfigString: string | null, allowedNamespaces: string[]): Promise<any> {
+import { agentManager } from "../../agent/agent.manager";
+
+export async function executeGetClusterSummaryTool(args: any, kubeconfigString: string | null, allowedNamespaces: string[], clusterId: string | null = null): Promise<any> {
+    if (clusterId && agentManager.isAgentConnected(clusterId)) {
+        try {
+            const stats = await agentManager.executeTool(clusterId, 'get_aggregated_stats', {});
+            return {
+                nodes: {
+                    total: stats.nodes?.length || 0,
+                    ready: stats.nodes?.filter((n: any) => n.status?.conditions?.some((c: any) => c.type === 'Ready' && c.status === 'True')).length || 0
+                },
+                pods: {
+                    total: stats.pods?.length || 0,
+                    running: stats.pods?.filter((p: any) => p.status?.phase === 'Running').length || 0,
+                    failed: stats.pods?.filter((p: any) => p.status?.phase === 'Failed' || p.status?.phase === 'CrashLoopBackOff').length || 0,
+                    pending: stats.pods?.filter((p: any) => p.status?.phase === 'Pending').length || 0
+                },
+                deployments: {
+                    total: stats.deployments?.length || 0
+                }
+            };
+        } catch (e: any) {
+            return `Error getting cluster summary via agent: ${e.message}`;
+        }
+    }
+
     if (!kubeconfigString) {
         return "Kubernetes context not initialized. Cluster config may be missing.";
     }

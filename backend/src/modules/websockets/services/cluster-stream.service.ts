@@ -12,6 +12,7 @@ import { SecretsClient } from "../../../infrastructure/kubernetes/secrets.client
 import { IngressClient } from "../../../infrastructure/kubernetes/ingress.client";
 import { ClusterRepository } from "../../clusters/repositories/cluster.repository";
 import { decrypt } from "../../../utils/encryption.util";
+import { agentManager } from "../../agent/agent.manager";
 
 export class ClusterStreamService {
     private clusterRepository: ClusterRepository;
@@ -25,10 +26,23 @@ export class ClusterStreamService {
         if (!cluster) {
             throw new Error("Cluster not found or permission denied");
         }
+        if (!cluster.kubeconfig) {
+            return null; // Signals that we must rely on the Agent
+        }
         return decrypt(cluster.kubeconfig);
     }
 
-    async getAggregatedStats(kubeconfig: string) {
+    async getAggregatedStats(clusterId: string, kubeconfig: string | null) {
+        if (agentManager.isAgentConnected(clusterId)) {
+            console.log(`[Stream] Fetching stats for ${clusterId} via Agent`);
+            return await agentManager.executeTool(clusterId, 'get_aggregated_stats', {});
+        }
+
+        if (!kubeconfig) {
+            throw new Error("Cluster is not connected via Agent and has no kubeconfig fallback.");
+        }
+
+        console.log(`[Stream] Fetching stats for ${clusterId} via local Kubeconfig fallback`);
         const podsClient = new PodsClient(kubeconfig);
         const nodesClient = new NodesClient(kubeconfig);
         const deploymentsClient = new DeploymentsClient(kubeconfig);

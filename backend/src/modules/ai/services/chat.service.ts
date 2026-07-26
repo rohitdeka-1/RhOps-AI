@@ -6,6 +6,7 @@ import { LokiClient } from "../../../infrastructure/monitoring/loki.client";
 import { buildSystemPrompt } from "../prompts/system.prompt";
 import { getToolDefinitions, executeTool } from "../tools";
 import { decrypt } from "../../../utils/encryption.util";
+import { agentManager } from "../../agent/agent.manager";
 
 export class ChatService {
     private aiProvider: IAiProvider | null = null;
@@ -59,9 +60,11 @@ export class ChatService {
             const cluster = await prisma.cluster.findUnique({ where: { id: clusterId } });
             if (cluster) {
                 clusterName = cluster.name;
-                kubeconfigString = decrypt(cluster.kubeconfig);
-                promClient = new PrometheusClient(kubeconfigString);
-                lokiClient = new LokiClient(kubeconfigString);
+                if (cluster.kubeconfig) {
+                    kubeconfigString = decrypt(cluster.kubeconfig);
+                    promClient = new PrometheusClient(kubeconfigString);
+                    lokiClient = new LokiClient(kubeconfigString);
+                }
             }
         }
 
@@ -79,18 +82,22 @@ export class ChatService {
         console.log("response::::::", response);
         let responseMessage = response.choices[0].message;
         console.log("responseMessage::::::", responseMessage);
+
         if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
             const toolOutputs = [];
             for (const toolCall of responseMessage.tool_calls) {
                 if (toolCall.type !== 'function') continue;
 
-                const result = await executeTool(
+                let result;
+                console.log(`[AI] Executing tool ${toolCall.function.name} for cluster ${clusterId}`);
+                result = await executeTool(
                     toolCall.function.name,
                     toolCall.function.arguments,
                     promClient,
                     lokiClient,
                     kubeconfigString,
-                    ['*'] // Cluster admin access by default based on current schema
+                    ['*'], // Cluster admin access by default based on current schema
+                    clusterId
                 );
 
                 toolOutputs.push({ toolCallId: toolCall.id, result });

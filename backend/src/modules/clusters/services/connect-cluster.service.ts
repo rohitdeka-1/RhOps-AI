@@ -13,16 +13,21 @@ export class ConnectClusterService {
         name: string;
         provider: string;
         projectId: string;
-        kubeconfig: string;
+        kubeconfig?: string;
         userId: string;
     }) {
-        // 1. Initialize client, extract API server, and test connection
-        const k8sClient = new KubernetesClient(data.kubeconfig);
-        const apiServer = k8sClient.getApiServer();
-        await k8sClient.testConnection();
+        let apiServer = "";
+        let encryptedKubeconfig = null;
 
-        // 2. Encrypt the kubeconfig
-        const encryptedKubeconfig = encrypt(data.kubeconfig);
+        if (data.kubeconfig) {
+            // 1. Initialize client, extract API server, and test connection
+            const k8sClient = new KubernetesClient(data.kubeconfig);
+            apiServer = k8sClient.getApiServer();
+            await k8sClient.testConnection();
+
+            // 2. Encrypt the kubeconfig
+            encryptedKubeconfig = encrypt(data.kubeconfig);
+        }
 
         // 3. Save to database
         const cluster = await this.clusterRepository.createCluster({

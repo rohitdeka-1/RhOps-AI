@@ -24,7 +24,46 @@ export const listResourcesToolDefinition = {
     }
 };
 
-export async function executeListResourcesTool(args: any, kubeconfigString: string | null, allowedNamespaces: string[]): Promise<any> {
+import { agentManager } from "../../agent/agent.manager";
+
+export async function executeListResourcesTool(args: any, kubeconfigString: string | null, allowedNamespaces: string[], clusterId: string | null = null): Promise<any> {
+    if (clusterId && agentManager.isAgentConnected(clusterId)) {
+        try {
+            let resources = [];
+            switch (args.kind.toLowerCase()) {
+                case 'pod':
+                case 'pods':
+                    resources = await agentManager.executeTool(clusterId, 'list_pods', { namespace: args.namespace });
+                    break;
+                case 'deployment':
+                case 'deployments':
+                    resources = await agentManager.executeTool(clusterId, 'list_deployments', { namespace: args.namespace });
+                    break;
+                case 'service':
+                case 'services':
+                    resources = await agentManager.executeTool(clusterId, 'list_services', { namespace: args.namespace });
+                    break;
+                default:
+                    return `Error: Resource kind '${args.kind}' is not supported yet by this tool.`;
+            }
+            
+            const formatted = resources.map((r: any) => ({
+                name: r.metadata?.name,
+                namespace: r.metadata?.namespace,
+                status: r.status?.phase || (r.status?.conditions ? r.status.conditions.map((c:any) => c.type).join(',') : 'Unknown'),
+                createdAt: r.metadata?.creationTimestamp
+            }));
+
+            return {
+                kind: args.kind,
+                count: formatted.length,
+                items: formatted
+            };
+        } catch (e: any) {
+            return `Error listing resources via agent: ${e.message}`;
+        }
+    }
+
     if (!kubeconfigString) {
         return "Kubernetes context not initialized. Cluster config may be missing.";
     }

@@ -27,7 +27,7 @@ export default async function websocketsRoutes(fastify: FastifyInstance) {
                 const sendUpdate = async () => {
                     if (socket.readyState !== 1) return; // WebSocket.OPEN is 1
                     try {
-                        const stats = await streamService.getAggregatedStats(kubeconfig);
+                        const stats = await streamService.getAggregatedStats(clusterId, kubeconfig);
                         socket.send(JSON.stringify({ type: 'CLUSTER_UPDATE', data: stats }));
                     } catch (err: any) {
                         fastify.log.error(`Stream error: ${err.message}`);

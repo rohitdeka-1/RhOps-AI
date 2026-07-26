@@ -20,7 +20,8 @@ export const executeTool = async (
     promClient: PrometheusClient | null, 
     lokiClient: LokiClient | null,
     kubeconfigString: string | null = null,
-    allowedNamespaces: string[] = ['*']
+    allowedNamespaces: string[] = ['*'],
+    clusterId: string | null = null
 ): Promise<any> => {
     try {
         const args = JSON.parse(argsStr);
@@ -29,9 +30,9 @@ export const executeTool = async (
         } else if (toolName === 'query_loki') {
             return await executeLokiTool(args, lokiClient);
         } else if (toolName === 'list_resources') {
-            return await executeListResourcesTool(args, kubeconfigString, allowedNamespaces);
+            return await executeListResourcesTool(args, kubeconfigString, allowedNamespaces, clusterId);
         } else if (toolName === 'get_cluster_summary') {
-            return await executeGetClusterSummaryTool(args, kubeconfigString, allowedNamespaces);
+            return await executeGetClusterSummaryTool(args, kubeconfigString, allowedNamespaces, clusterId);
         }
         return `Tool ${toolName} not supported.`;
     } catch (e: any) {

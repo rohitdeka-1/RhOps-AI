@@ -56,8 +56,8 @@ model Cluster {
   id           String        @id @default(uuid())
   name         String
   provider     String
-  apiServer    String
-  kubeconfig   String
+  apiServer    String?
+  kubeconfig   String?
   status       Status        @default(PENDING)
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -6,18 +6,18 @@ export class ClusterRepository {
         name: string;
         provider: string;
         projectId: string;
-        apiServer: string;
-        kubeconfig: string;
+        apiServer?: string | null;
+        kubeconfig?: string | null;
         userId: string;
     }) {
         return prisma.cluster.create({
             data: {
                 name: data.name,
                 provider: data.provider,
-                projectId: data.projectId,
                 apiServer: data.apiServer,
                 kubeconfig: data.kubeconfig,
-                userId: data.userId,
+                project: { connect: { id: data.projectId } },
+                user: { connect: { id: data.userId } },
             }
         });
     }

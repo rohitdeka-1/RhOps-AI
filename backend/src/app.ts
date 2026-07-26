@@ -21,6 +21,7 @@ import { aiRoutes } from './modules/ai/routes/ai.routes';
 import corsPlugin from './plugins/cors';
 import jwtPlugin from './plugins/jwt';
 import websocketPlugin from '@fastify/websocket';
+import agentSocketPlugin from './plugins/socket.plugin';
 
 export const buildApp = async (): Promise<FastifyInstance> => {
   const app = Fastify({
@@ -32,6 +33,7 @@ export const buildApp = async (): Promise<FastifyInstance> => {
   await app.register(corsPlugin);
   await app.register(jwtPlugin);
   await app.register(websocketPlugin);
+  await app.register(agentSocketPlugin);
   await app.register(multipart, {
     attachFieldsToBody: true
   });

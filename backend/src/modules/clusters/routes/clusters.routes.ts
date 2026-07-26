@@ -3,18 +3,20 @@ import { ConnectClusterController } from '../controllers/connect-cluster.control
 import { DisconnectClusterController } from '../controllers/disconnect-cluster.controller';
 import { ListClusterController } from '../controllers/list-clusters.controller';
 import { TopologyController } from '../controllers/topology.controller';
+import { AgentInstallController } from '../controllers/agent-install.controller';
 
 export default async function clusterRoutes(fastify: FastifyInstance) {
     const connectClusterController = new ConnectClusterController();
     const disconnectClusterController = new DisconnectClusterController();
     const listClusterController = new ListClusterController();
+    const agentInstallController = new AgentInstallController();
 
     fastify.post('/connect', {
         preValidation: [fastify.authenticate],
         schema: {
             body: {
                 type: 'object',
-                required: ['name', 'provider', 'projectId', 'kubeconfig'],
+                required: ['name', 'provider', 'projectId'],
                 properties: {
                     name: { 
                         type: 'object', 
@@ -60,6 +62,8 @@ export default async function clusterRoutes(fastify: FastifyInstance) {
     fastify.get('/', {
         preValidation: [fastify.authenticate]
     }, listClusterController.listClusters);
+
+    fastify.get('/:id/install.yaml', agentInstallController.getInstallManifest);
 
     fastify.get('/:id/namespaces', {
         preValidation: [fastify.authenticate],

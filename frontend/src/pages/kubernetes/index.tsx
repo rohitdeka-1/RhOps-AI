@@ -36,8 +36,8 @@ export default function Kubernetes() {
     );
   }
 
-  if (!projectCluster) {
-    return <ConnectCluster projectId={projectId} />;
+  if (!projectCluster || projectCluster.status === 'PENDING') {
+    return <ConnectCluster projectId={projectId} existingClusterId={projectCluster?.id} />;
   }
 
   // Route to the appropriate tab based on search param

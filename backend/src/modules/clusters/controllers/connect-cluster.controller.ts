@@ -35,10 +35,10 @@ export class ConnectClusterController {
                 else if (kcField.data) kubeconfig = kcField.data.toString('utf8');
             }
 
-            if (!name || !provider || !projectId || !kubeconfig) {
+            if (!name || !provider || !projectId) {
                 return reply.code(400).send({
                     success: false,
-                    message: "Missing required fields: name, provider, projectId, kubeconfig file"
+                    message: "Missing required fields: name, provider, projectId"
                 });
             }
 
