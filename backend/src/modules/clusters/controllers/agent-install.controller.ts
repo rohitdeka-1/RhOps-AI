@@ -2,23 +2,27 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../../config/prisma";
 
 export class AgentInstallController {
-    
-    getInstallManifest = async (request: FastifyRequest, reply: FastifyReply) => {
-        try {
-            const { id } = request.params as { id: string };
-            
-            // Verify cluster exists
-            const cluster = await prisma.cluster.findUnique({
-                where: { id }
-            });
 
-            if (!cluster) {
-                return reply.code(404).send({ message: "Cluster not found" });
-            }
+  getInstallManifest = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { id } = request.params as { id: string };
 
-            const backendUrl = process.env.RHOPS_BACKEND_URL || `${request.protocol}://${request.headers.host}`;
+      // Verify cluster exists
+      const cluster = await prisma.cluster.findUnique({
+        where: { id }
+      });
 
-            const manifest = `
+      if (!cluster) {
+        return reply.code(404).send({ message: "Cluster not found" });
+      }
+
+      let defaultBackendUrl = `${request.protocol}://${request.headers.host}`;
+      if (defaultBackendUrl.includes('localhost')) {
+          defaultBackendUrl = defaultBackendUrl.replace('localhost', 'host.docker.internal');
+      }
+      const backendUrl = process.env.RHOPS_BACKEND_URL || defaultBackendUrl;
+
+      const manifest = `
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -73,8 +77,8 @@ spec:
       serviceAccountName: rhops-agent
       containers:
       - name: agent
-        image: rhops-ai/agent:latest
-        imagePullPolicy: IfNotPresent
+        image: rohitdeka/rhdopsai:latest
+        imagePullPolicy: Always
         env:
         - name: RHOPS_CLUSTER_TOKEN
           value: "${cluster.id}"
@@ -82,10 +86,10 @@ spec:
           value: "${backendUrl}"
 `;
 
-            reply.header('Content-Type', 'text/yaml');
-            return reply.send(manifest);
-        } catch (error: any) {
-            return reply.code(500).send({ message: error.message });
-        }
+      reply.header('Content-Type', 'text/yaml');
+      return reply.send(manifest);
+    } catch (error: any) {
+      return reply.code(500).send({ message: error.message });
     }
+  }
 }

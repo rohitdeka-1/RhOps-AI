@@ -69,8 +69,13 @@ export default fp(async (fastify: FastifyInstance) => {
                     where: { id: clusterId },
                     data: { status: 'INACTIVE' }
                 });
-            } catch (e) {
-                console.error('Failed to update cluster status to INACTIVE', e);
+            } catch (e: any) {
+                if (e.code === 'P2025') {
+                    // Cluster was already deleted, ignore
+                    console.log(`[Socket.io] Cluster ${clusterId} already removed from DB.`);
+                } else {
+                    console.error(`[Socket.io] Failed to update cluster status to INACTIVE: ${e.message}`);
+                }
             }
         });
     });

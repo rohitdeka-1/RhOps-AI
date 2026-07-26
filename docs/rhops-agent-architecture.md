@@ -90,3 +90,21 @@ When a user types *"How many pods are running?"* into the RhOps Chat:
 4. **Execution**: The Agent receives the event, triggers `k8sClient.getPods()`, and fetches the live data locally.
 5. **Return**: The Agent fires the `{ "tool_response": [...] }` back up the WebSocket.
 6. **Resolution**: The `AgentManager` Promise resolves with the data, feeds it back to the LLM, and the user gets their answer instantly!
+
+---
+
+## 5. Recent Architectural Updates
+
+As the architecture evolved, several key optimizations were implemented to improve reliability and developer experience:
+
+### 5.1 The ESBuild Bundler (`agent/package.json`)
+The official `@kubernetes/client-node` library (v1.4.0) strictly uses ECMAScript Modules (ESM). Initially, building the agent with the standard TypeScript compiler (`tsc`) targeted CommonJS, which triggered fatal `ERR_REQUIRE_ESM` errors when Node.js attempted to run the production build.
+To solve this cleanly without forcing the entire project into ESM mode, the agent's build system was upgraded to **esbuild**. Esbuild automatically analyzes and bundles all external dependencies (including ESM libraries) directly into a single, cohesive CommonJS output file, bypassing the runtime errors entirely.
+
+### 5.2 Localhost Translation (`backend/src/modules/clusters/controllers/agent-install.controller.ts`)
+To facilitate seamless local development using Docker Desktop, a dynamic URL translation mechanism was introduced.
+If a developer requests the `install.yaml` manifest via `http://localhost:3000`, the backend detects `localhost` and automatically translates it to `host.docker.internal:3000` inside the generated YAML. This ensures that when the Agent Pod boots inside the local Kubernetes cluster, it knows how to break out of its container network and reach the host machine's backend, while retaining standard URL behavior for production deployments.
+
+### 5.3 Graceful Disconnect Handling (`backend/src/plugins/socket.plugin.ts`)
+In dynamic environments, clusters are frequently recreated or deleted. If a user deletes a cluster from the database while its Agent is still actively connected, the backend will inevitably receive a `disconnect` event when that Agent shuts down.
+Previously, attempting to update the cluster's status to `INACTIVE` upon disconnect would trigger a massive Prisma `P2025: Record not found` error stack trace. The `disconnect` event listener was updated to specifically catch `P2025` errors and silently discard them, ensuring the server logs remain clean and actionable.
