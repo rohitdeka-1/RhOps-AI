@@ -7,7 +7,7 @@ export class ChatController {
 
     chat = async (request: FastifyRequest, reply: FastifyReply) => {
         try {
-            const { message, clusterId, sessionId } = request.body as any;
+            const { message, clusterId, sessionId, isBackground } = request.body as any;
             const user = (request as any).user;
 
             if (!user) {
@@ -18,7 +18,7 @@ export class ChatController {
                 return reply.code(400).send({ message: "Message is required" });
             }
 
-            const response = await this.chatService.handleChat(user.id, clusterId, sessionId, message);
+            const response = await this.chatService.handleChat(user.id, clusterId, sessionId, message, isBackground);
             return reply.send(response);
 
         } catch (error: any) {

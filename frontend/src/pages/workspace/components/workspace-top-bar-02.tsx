@@ -7,7 +7,9 @@ import {
   IconLogout,
   IconChevronRight,
   IconSun,
-  IconMoon
+  IconMoon,
+  IconSparkles,
+  IconLoader2
 } from "@tabler/icons-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,6 +24,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 import { useNavigate } from "react-router-dom";
 import { useProjects } from "@/hooks/use-projects";
 import { Badge } from "@/components/base/badge";
+import { useAiSummary } from "@/contexts/ai-summary-context";
 
 function getInitials(name: string): string {
   return name
@@ -59,6 +62,21 @@ export function WorkspaceTopBar02() {
     navigate("/", { replace: true });
   };
 
+  const { summaryData, isGenerating, isNewSummary, openSummary } = useAiSummary();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Auto-open when a new summary arrives
+  useEffect(() => {
+    if (isNewSummary) {
+      setIsDropdownOpen(true);
+    }
+  }, [isNewSummary]);
+
+  const handleToggleSummary = () => {
+    if (isNewSummary) openSummary(); // Mark as read
+    setIsDropdownOpen((prev) => !prev);
+  };
+
   const isProjectView = pathname.startsWith("/cluster") || pathname.startsWith("/settings");
   const isOverview = pathname === "/overview";
 
@@ -93,6 +111,83 @@ export function WorkspaceTopBar02() {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* AI Summary Notification Bubble */}
+        {(isProjectView && clusterId) && (
+          <div className="relative">
+            <button
+              onClick={handleToggleSummary}
+              className={`relative p-2 text-muted-foreground hover:text-foreground transition-all rounded-full hover:bg-muted ${isNewSummary ? "animate-in slide-in-from-top-2 duration-500" : ""}`}
+              title="AI Cluster Summary"
+            >
+              {isGenerating ? (
+                <IconLoader2 className="size-5 animate-spin text-primary" />
+              ) : (
+                <IconSparkles className={`size-5 ${isNewSummary || isDropdownOpen ? "text-primary" : ""}`} />
+              )}
+              
+              {/* Notification Dot */}
+              {isNewSummary && !isGenerating && (
+                <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+                </span>
+              )}
+            </button>
+
+            {/* iPhone-style Floating Notification / Dropdown */}
+            {(!isGenerating && summaryData) && (
+              <div 
+                className={`absolute top-full mt-3 right-0 w-80 bg-card border border-border/60 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] rounded-[20px] p-4 z-50 transition-all duration-300 ${isDropdownOpen ? "animate-in slide-in-from-top-6 fade-in opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-y-2"}`}
+              >
+                {/* Pointer Caret */}
+                <div className="absolute -top-2 right-3 w-4 h-4 bg-card border-l border-t border-border/60 rotate-45"></div>
+                
+                <div className="relative z-10 flex flex-col gap-3">
+                  <div className="flex gap-3 items-start">
+                    <div className="size-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
+                      <IconSparkles className="size-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <h4 className="font-semibold text-[13px] text-foreground">RhOps AI</h4>
+                        <span className="text-[10px] text-muted-foreground">Now</span>
+                      </div>
+                      <p className="text-[13px] text-foreground leading-relaxed">
+                        {summaryData.textSummary}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {summaryData.quantify && (
+                    <div className="mt-2 grid grid-cols-2 gap-2 bg-muted/50 p-2 rounded-xl">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">CPU</span>
+                        <span className="text-xs font-medium">{summaryData.quantify.cpu_usage_percentage}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Memory</span>
+                        <span className="text-xs font-medium">{summaryData.quantify.memory_usage_percentage}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Pods</span>
+                        <span className="text-xs font-medium">{summaryData.quantify.pods}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Issues</span>
+                        <span className="text-xs font-medium">{summaryData.quantify.events}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <button onClick={() => setIsDropdownOpen(false)} className="mt-2 w-full text-xs text-muted-foreground hover:text-foreground text-center py-1">
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <button
           onClick={toggleTheme}
           className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted"

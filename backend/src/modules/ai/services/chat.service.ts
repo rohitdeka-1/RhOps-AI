@@ -18,33 +18,35 @@ export class ChatService {
         return this.aiProvider;
     }
 
-    async handleChat(userId: string, clusterId: string | null, sessionId: string | null, message: string) {
+    async handleChat(userId: string, clusterId: string | null, sessionId: string | null, message: string, isBackground: boolean = false) {
         let session;
-        if (sessionId) {
-            session = await prisma.chatSession.findUnique({
-                where: { id: sessionId },
-                include: { messages: { orderBy: { createdAt: 'asc' } } }
-            });
-            if (!session) throw new Error("Chat session not found");
-        } else {
-            session = await prisma.chatSession.create({
-                data: {
-                    title: message.substring(0, 50),
-                    userId,
-                    clusterId,
-                },
-                include: { messages: true }
+        if (!isBackground) {
+            if (sessionId) {
+                session = await prisma.chatSession.findUnique({
+                    where: { id: sessionId },
+                    include: { messages: { orderBy: { createdAt: 'asc' } } }
+                });
+                if (!session) throw new Error("Chat session not found");
+            } else {
+                session = await prisma.chatSession.create({
+                    data: {
+                        title: message.substring(0, 50),
+                        userId,
+                        clusterId,
+                    },
+                    include: { messages: true }
+                });
+            }
+
+            await prisma.chatMessage.create({
+                data: { sessionId: session.id, role: "USER", content: message }
             });
         }
 
-        await prisma.chatMessage.create({
-            data: { sessionId: session.id, role: "USER", content: message }
-        });
-
-        const messages = session.messages.map(msg => ({
+        const messages = session ? session.messages.map(msg => ({
             role: msg.role === "USER" ? "user" : "assistant",
             content: msg.content
-        })) as any[];
+        })) as any[] : [];
 
         messages.push({ role: 'user', content: message });
 
@@ -101,21 +103,24 @@ export class ChatService {
 
         const finalContent = responseMessage.content || "I couldn't generate a response.";
 
-        const aiMsg = await prisma.chatMessage.create({
-            data: { sessionId: session.id, role: "AI", content: finalContent }
-        });
+        let aiMsg;
+        if (!isBackground) {
+            aiMsg = await prisma.chatMessage.create({
+                data: { sessionId: session.id, role: "AI", content: finalContent }
+            });
+        }
 
         return {
-            session: {
+            session: session ? {
                 id: session.id,
                 title: session.title,
                 createdAt: session.createdAt
-            },
+            } : { id: 'background', title: 'Background Task', createdAt: new Date() },
             message: {
-                id: aiMsg.id,
+                id: aiMsg ? aiMsg.id : 'msg-bg',
                 role: "assistant",
-                content: aiMsg.content,
-                timestamp: aiMsg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                content: finalContent,
+                timestamp: aiMsg ? aiMsg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }
         };
     }

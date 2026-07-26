@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { cluster as mockCluster } from "@/data/kubernetes";
-import { IconServer2, IconDatabase, IconNetwork, IconCpu, IconCloud, IconSparkles, IconLayersLinked, IconBox, IconChartLine, IconAlertCircle } from "@tabler/icons-react";
+import { IconServer2, IconDatabase, IconNetwork, IconCpu, IconCloud, IconSparkles, IconLayersLinked, IconBox, IconChartLine, IconAlertCircle, IconX } from "@tabler/icons-react";
+import { useAiSummary } from "@/contexts/ai-summary-context";
 import { cn } from "@/lib/utils";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useClusterStream } from "@/hooks/use-cluster-stream";
@@ -12,6 +13,15 @@ interface OverviewTabProps {
 
 export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
   const [isPrometheusEnabled, setIsPrometheusEnabled] = useState(false);
+
+  // AI Summary Context
+  const { summaryData, isGenerating, isDismissed, fetchSummary, dismissSummary } = useAiSummary();
+
+  useEffect(() => {
+    if (clusterId) {
+      fetchSummary(clusterId);
+    }
+  }, [clusterId, fetchSummary]);
 
   // Fetch real data from WebSocket stream
   const { data: streamData, status } = useClusterStream(clusterId);
@@ -200,20 +210,6 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
 
         {/* Right: AI Summary & Status Badge */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 max-w-4xl">
-
-          {/* AI Health Summary Panel */}
-          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-lg p-3 flex gap-3 items-start shadow-sm text-sm">
-            <div className="bg-primary/20 p-1.5 rounded-md text-primary shrink-0">
-              <IconSparkles className="size-4" />
-            </div>
-            <div className="leading-snug">
-              <span className="font-semibold text-foreground mr-2">AI Summary:</span>
-              <span className="text-foreground">
-                The cluster is operating normally. A recent traffic spike at 10:20 caused CPU utilization to briefly jump to 25%, but HPA successfully scaled workloads.
-                There are 2 failed pods in the <span className="font-mono text-xs text-foreground bg-muted px-1 py-0.5 rounded">default</span> namespace crash-looping due to a missing ConfigMap, but core services remain highly available.
-              </span>
-            </div>
-          </div>
 
           {/* Status Badge */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shrink-0">
