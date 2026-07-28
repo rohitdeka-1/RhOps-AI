@@ -24,7 +24,7 @@ export class PrometheusClient {
         const coreApi = this.kc.makeApiClient(k8s.CoreV1Api);
         const cluster = this.kc.getCurrentCluster();
         const user = this.kc.getCurrentUser();
-        
+
         if (!cluster || !user) {
             throw new Error('Invalid kubeconfig: Missing cluster or user information.');
         }
@@ -32,17 +32,17 @@ export class PrometheusClient {
         // We construct the proxy path for the Kubernetes API Server
         const path = `/api/v1/namespaces/${namespace}/services/http:${serviceName}:9090/proxy/api/v1/query_range`;
         const server = cluster.server;
-        
+
         const url = `${server}${path}`;
 
         // Construct headers for authentication to API server
         const headers: Record<string, string> = {};
-        
+
         // Handle token auth or client certificates
         if (user.token) {
             headers['Authorization'] = `Bearer ${user.token}`;
         }
-        
+
         // Need to provide TLS options based on the cluster's config
         const httpsAgent = new https.Agent({
             ca: cluster.caData ? Buffer.from(cluster.caData, 'base64') : undefined,
