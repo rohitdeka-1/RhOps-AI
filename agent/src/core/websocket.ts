@@ -116,6 +116,9 @@ export class WebSocketClient {
                     case 'exec_command':
                         result = await k8sClient.execCommand(args?.name, args?.namespace, args?.command, args?.container);
                         break;
+                    case 'query_prometheus':
+                        result = await k8sClient.queryPrometheus(args?.query, args?.start, args?.end, args?.step, args?.serviceName, args?.namespace);
+                        break;
                     default:
                         throw new Error(`Tool ${data.tool} is not supported by the agent.`);
                 }

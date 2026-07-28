@@ -11,7 +11,8 @@ export default fp(async (fastify: FastifyInstance) => {
         cors: {
             origin: '*',
             methods: ['GET', 'POST']
-        }
+        },
+        maxHttpBufferSize: 1e8 // 100MB limit for large k8s payloads
     });
 
     fastify.decorate('io', io);

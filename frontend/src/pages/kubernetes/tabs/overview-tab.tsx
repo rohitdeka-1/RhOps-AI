@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { cluster as mockCluster } from "@/data/kubernetes";
-import { IconServer2, IconDatabase, IconNetwork, IconCpu, IconCloud, IconSparkles, IconLayersLinked, IconBox, IconChartLine, IconAlertCircle, IconX } from "@tabler/icons-react";
+import { IconServer2, IconDatabase, IconNetwork, IconCpu, IconCloud, IconSparkles, IconLayersLinked, IconBox, IconChartLine, IconAlertCircle, IconX, IconCopy, IconCheck, IconTerminal2, IconLoader2 } from "@tabler/icons-react";
 import { useAiSummary } from "@/contexts/ai-summary-context";
 import { cn } from "@/lib/utils";
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useClusterStream } from "@/hooks/use-cluster-stream";
+import { api } from "@/lib/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface OverviewTabProps {
   clusterId: string;
@@ -13,6 +15,39 @@ interface OverviewTabProps {
 
 export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
   const [isPrometheusEnabled, setIsPrometheusEnabled] = useState(false);
+  const [isPrometheusModalOpen, setIsPrometheusModalOpen] = useState(false);
+  const [isCheckingPrometheus, setIsCheckingPrometheus] = useState(false);
+  const [prometheusCheckMessage, setPrometheusCheckMessage] = useState<string | null>(null);
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
+
+  const helmSnippet = `helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace`;
+
+  const handleCopySnippet = () => {
+    navigator.clipboard.writeText(helmSnippet);
+    setCopiedSnippet(true);
+    setTimeout(() => setCopiedSnippet(false), 2000);
+  };
+
+  const handleCheckPrometheus = async () => {
+    setIsCheckingPrometheus(true);
+    setPrometheusCheckMessage(null);
+    try {
+      const res = await api.get(`/metrics/prometheus/check?clusterId=${clusterId}`);
+      if (res.data?.data?.connected) {
+        setIsPrometheusEnabled(true);
+        setPrometheusCheckMessage("Successfully connected to Prometheus service inside cluster!");
+        setTimeout(() => setIsPrometheusModalOpen(false), 1500);
+      } else {
+        setPrometheusCheckMessage(res.data?.data?.reason || "Prometheus service not detected yet. Run the Helm command below first.");
+      }
+    } catch (err: any) {
+      setPrometheusCheckMessage("Error verifying Prometheus: " + (err.response?.data?.message || err.message));
+    } finally {
+      setIsCheckingPrometheus(false);
+    }
+  };
 
   // AI Summary Context
   const { summaryData, isGenerating, isDismissed, fetchSummary, dismissSummary } = useAiSummary();
@@ -260,8 +295,8 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
                 Showing live polling metrics. Enable Prometheus for historical data.
               </span>
               <button
-                onClick={() => setIsPrometheusEnabled(true)}
-                className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded hover:bg-primary/90 transition-colors"
+                onClick={() => setIsPrometheusModalOpen(true)}
+                className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded hover:bg-primary/90 transition-colors shadow-sm"
               >
                 Connect Prometheus
               </button>
@@ -482,6 +517,81 @@ export function OverviewTab({ clusterId, cluster }: OverviewTabProps) {
 
         </div>
       </div>
+
+      {/* Connect Prometheus Dialog */}
+      <Dialog open={isPrometheusModalOpen} onOpenChange={setIsPrometheusModalOpen}>
+        <DialogContent className="sm:max-w-xl w-[92vw] overflow-hidden">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-orange-500/10 text-orange-500 rounded-xl shrink-0">
+                <IconTerminal2 className="size-5" />
+              </div>
+              <div className="text-left">
+                <DialogTitle className="text-base font-semibold">Connect Prometheus</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Install or connect Prometheus in your Kubernetes cluster to stream rich metrics.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-left">
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase text-muted-foreground tracking-wider">Step 1: Install Prometheus via Helm 3</p>
+              <div className="relative bg-zinc-950 dark:bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-[11px] font-mono text-zinc-200 overflow-x-auto max-w-full">
+                <pre className="whitespace-pre-wrap break-all leading-relaxed">{helmSnippet}</pre>
+                <button
+                  onClick={handleCopySnippet}
+                  className="absolute top-2.5 right-2.5 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded transition-colors flex items-center gap-1 text-[11px] shadow-sm"
+                >
+                  {copiedSnippet ? <IconCheck className="size-3 text-emerald-400" /> : <IconCopy className="size-3" />}
+                  <span>{copiedSnippet ? "Copied!" : "Copy"}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-3 border-t border-border">
+              <p className="text-[11px] font-bold uppercase text-muted-foreground tracking-wider">Step 2: Test & Verify In-Cluster Connection</p>
+              <p className="text-xs text-muted-foreground">
+                Our in-cluster agent will search for Prometheus endpoints inside the <code className="text-foreground bg-muted px-1.5 py-0.5 rounded text-[11px]">monitoring</code> namespace automatically over the WebSocket connection.
+              </p>
+
+              {prometheusCheckMessage && (
+                <div className={cn(
+                  "p-3 rounded-lg text-xs border font-medium flex items-center gap-2 mt-2",
+                  isPrometheusEnabled || prometheusCheckMessage.includes("Successfully")
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                    : "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
+                )}>
+                  {isPrometheusEnabled || prometheusCheckMessage.includes("Successfully") ? (
+                    <IconCheck className="size-4 shrink-0" />
+                  ) : (
+                    <IconAlertCircle className="size-4 shrink-0" />
+                  )}
+                  <span>{prometheusCheckMessage}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-1">
+            <button
+              onClick={() => setIsPrometheusModalOpen(false)}
+              className="px-4 py-2 border border-border rounded-lg text-xs font-medium hover:bg-muted transition-colors text-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCheckPrometheus}
+              disabled={isCheckingPrometheus}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-2 disabled:opacity-50 shadow-sm"
+            >
+              {isCheckingPrometheus && <IconLoader2 className="size-3.5 animate-spin" />}
+              <span>{isCheckingPrometheus ? "Verifying Prometheus..." : "Verify Connection"}</span>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

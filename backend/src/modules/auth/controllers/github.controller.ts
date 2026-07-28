@@ -79,7 +79,7 @@ export class GithubController {
         // Create new user
         const randomPassword = crypto.randomBytes(16).toString("hex");
         const hashedPassword = await bcrypt.hash(randomPassword, 10);
-        
+
         let username = githubUser.login;
         // Check if username is taken, append random if so
         const existingUsername = await this.authRepository.findUsernameOrEmail('', username);

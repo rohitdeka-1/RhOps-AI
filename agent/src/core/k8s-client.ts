@@ -1,5 +1,5 @@
-// Force recompile
 import * as k8s from '@kubernetes/client-node';
+import axios from 'axios';
 
 export class K8sClient {
     private kc: k8s.KubeConfig;
@@ -81,10 +81,22 @@ export class K8sClient {
     }
 
     async getServices(namespace: string = 'all') {
-        const res: any = namespace === 'all' 
-            ? await this.coreApi.listServiceForAllNamespaces() 
-            : await this.coreApi.listNamespacedService({ namespace });
-        return this.extractItems(res);
+        try {
+            let res: any;
+            if (namespace === 'all') {
+                res = await this.coreApi.listServiceForAllNamespaces();
+            } else {
+                try {
+                    res = await (this.coreApi as any).listNamespacedService({ namespace });
+                } catch {
+                    res = await (this.coreApi as any).listNamespacedService(namespace);
+                }
+            }
+            return this.extractItems(res);
+        } catch (e) {
+            console.log("getServices error:", e);
+            return [];
+        }
     }
 
     async getNamespaces() {
@@ -204,11 +216,7 @@ export class K8sClient {
     }
 
     async getAggregatedStats() {
-        const [
-            pods, nodes, deployments, services,
-            namespaces, events, nodeMetrics, podMetrics,
-            statefulsets, pvcs, configmaps, secrets, ingresses
-        ] = await Promise.allSettled([
+        const results = await Promise.allSettled([
             this.getPods('all'),
             this.getNodes(),
             this.getDeployments('all'),
@@ -223,6 +231,18 @@ export class K8sClient {
             this.getSecrets('all'),
             this.getIngresses('all')
         ]);
+
+        const [
+            pods, nodes, deployments, services,
+            namespaces, events, nodeMetrics, podMetrics,
+            statefulsets, pvcs, configmaps, secrets, ingresses
+        ] = results;
+
+        results.forEach((res, i) => {
+            if (res.status === 'rejected') {
+                console.error(`Promise ${i} failed in getAggregatedStats:`, res.reason);
+            }
+        });
 
         return {
             pods: pods.status === 'fulfilled' ? pods.value : [],
@@ -239,6 +259,126 @@ export class K8sClient {
             secrets: secrets.status === 'fulfilled' ? secrets.value : [],
             ingresses: ingresses.status === 'fulfilled' ? ingresses.value : []
         };
+    }
+
+    async queryPrometheus(query: string, start?: string | number, end?: string | number, step: string = '1m', serviceName?: string, namespace?: string) {
+        const targetNamespace = namespace || process.env.PROMETHEUS_NAMESPACE || 'monitoring';
+        const endTs = end || Math.floor(Date.now() / 1000);
+        const startTs = start || (Number(endTs) - 3600);
+
+        // Method 1: Try Kubernetes API Server Proxy (Guaranteed across all CNI / DNS setups)
+        const proxyServiceNames = [
+            serviceName,
+            'prometheus-kube-prometheus-prometheus',
+            'prometheus-operated',
+            'prometheus-prometheus',
+            'prometheus-server',
+            'prometheus'
+        ].filter(Boolean) as string[];
+
+        for (const sName of proxyServiceNames) {
+            try {
+                const cluster = this.kc.getCurrentCluster();
+                const user = this.kc.getCurrentUser();
+                
+                if (cluster && cluster.server && user) {
+                    const proxyUrl = `${cluster.server}/api/v1/namespaces/${targetNamespace}/services/http:${sName}:9090/proxy/api/v1/query_range`;
+                    
+                    const headers: Record<string, string> = {};
+                    if (user.token) {
+                        headers['Authorization'] = `Bearer ${user.token}`;
+                    }
+
+                    let httpsAgent;
+                    const https = require('https');
+                    httpsAgent = new https.Agent({
+                        ca: cluster.caData ? Buffer.from(cluster.caData, 'base64') : undefined,
+                        cert: user.certData ? Buffer.from(user.certData, 'base64') : undefined,
+                        key: user.keyData ? Buffer.from(user.keyData, 'base64') : undefined,
+                        rejectUnauthorized: false, // Inside pod: skip TLS domain verification for API server (10.96.0.1)
+                    });
+
+                    const response = await axios.get(proxyUrl, {
+                        headers,
+                        httpsAgent,
+                        params: { query, start: startTs, end: endTs, step },
+                        timeout: 5000
+                    });
+
+                    if (response.data) {
+                        console.log(`Successfully queried Prometheus via K8s API Server Proxy (${sName})`);
+                        return response.data;
+                    }
+                }
+            } catch (proxyErr: any) {
+                console.log(`Proxy attempt for ${sName} failed:`, proxyErr?.message || proxyErr);
+            }
+        }
+
+        // Method 2: Fallback to Direct ClusterIP & In-Cluster DNS endpoints
+        const candidates: string[] = [];
+        const addCandidate = (name: string, ns: string, port: number | string = 9090) => {
+            candidates.push(`http://${name}.${ns}.svc:${port}`);
+            candidates.push(`http://${name}.${ns}:${port}`);
+            candidates.push(`http://${name}.${ns}.svc.cluster.local:${port}`);
+        };
+
+        if (serviceName) {
+            addCandidate(serviceName, targetNamespace, 9090);
+            addCandidate(serviceName, targetNamespace, 8080);
+        }
+
+        for (const name of proxyServiceNames) {
+            addCandidate(name, targetNamespace, 9090);
+            addCandidate(name, targetNamespace, 8080);
+        }
+
+        // Dynamically discover all services in cluster & use their direct ClusterIP
+        try {
+            const allServices = await this.getServices('all');
+            for (const svc of allServices) {
+                const name = svc.metadata?.name;
+                const ns = svc.metadata?.namespace || targetNamespace;
+                const clusterIp = svc.spec?.clusterIP;
+
+                if (name && (name.toLowerCase().includes('prometheus') || name.toLowerCase().includes('prom'))) {
+                    const ports = svc.spec?.ports || [];
+                    for (const p of ports) {
+                        const portNum = p.port || 9090;
+                        addCandidate(name, ns, portNum);
+                        if (clusterIp && clusterIp !== 'None') {
+                            candidates.push(`http://${clusterIp}:${portNum}`);
+                        }
+                    }
+                    addCandidate(name, ns, 9090);
+                    if (clusterIp && clusterIp !== 'None') {
+                        candidates.push(`http://${clusterIp}:9090`);
+                    }
+                }
+            }
+        } catch (svcErr) {
+            console.log("Could not discover services dynamically:", svcErr);
+        }
+
+        const uniqueCandidates = Array.from(new Set(candidates));
+        let lastError: Error | null = null;
+
+        for (const host of uniqueCandidates) {
+            try {
+                const res = await axios.get(`${host}/api/v1/query_range`, {
+                    params: { query, start: startTs, end: endTs, step },
+                    timeout: 3000
+                });
+                if (res.data) {
+                    console.log(`Successfully connected to Prometheus at: ${host}`);
+                    return res.data;
+                }
+            } catch (err: any) {
+                lastError = err;
+            }
+        }
+
+        throw new Error(`Failed to reach Prometheus service inside cluster (tested K8s API proxy + ${uniqueCandidates.length} endpoints). Last error: ${lastError?.message || 'ENOTFOUND'}`);
     }
 }
 

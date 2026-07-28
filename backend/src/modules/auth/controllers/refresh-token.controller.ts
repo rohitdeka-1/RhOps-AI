@@ -45,7 +45,8 @@ export class RefreshTokenController {
 
             return reply.code(200).send({
                 success: true,
-                message: 'Token refreshed successfully'
+                message: 'Token refreshed successfully',
+                token: newAccessToken
             });
 
         } catch (error: any) {

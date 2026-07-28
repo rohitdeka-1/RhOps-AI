@@ -22,11 +22,29 @@ export const prometheusToolDefinition = {
     }
 };
 
-export async function executePrometheusTool(args: any, promClient: PrometheusClient | null): Promise<any> {
-    if (!promClient) {
-        return "Prometheus client not initialized. Cluster context may be missing.";
-    }
+import { agentManager } from "../../agent/agent.manager";
+
+export async function executePrometheusTool(args: any, promClient: PrometheusClient | null, clusterId: string | null = null): Promise<any> {
     const end = Math.floor(Date.now() / 1000);
-    const start = end - 3600; 
-    return await promClient.queryRange(args.query, start, end, args.step || '1m');
+    const start = end - 3600;
+    const step = args.step || '1m';
+
+    if (clusterId && agentManager.isAgentConnected(clusterId)) {
+        try {
+            return await agentManager.executeTool(clusterId, 'query_prometheus', {
+                query: args.query,
+                start,
+                end,
+                step
+            });
+        } catch (e: any) {
+            return `Error querying Prometheus via agent: ${e.message}`;
+        }
+    }
+
+    if (!promClient) {
+        return "Prometheus client not initialized. Cluster context or active agent may be missing.";
+    }
+
+    return await promClient.queryRange(args.query, start, end, step);
 }
