@@ -406,13 +406,32 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
         {/* Right: AI Summary & Status Badge */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 max-w-4xl">
 
-          {/* Status Badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shrink-0">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs font-semibold text-emerald-600 tracking-wide uppercase">Healthy</span>
+          {/* Vertical Pod Status Color Band with Legend */}
+          <div className="flex items-center gap-3">
+            <div className="h-14 w-6 flex flex-col bg-muted shrink-0 shadow-sm" title={failed === 0 && pending === 0 ? "All Pods Healthy" : `${failed} Failed, ${pending} Pending`}>
+              {podStatusData.map(status => (
+                <div
+                  key={status.name}
+                  style={{
+                    height: `${(status.value / totalPodsForStatus) * 100}%`,
+                    backgroundColor: status.value > 0 ? status.color : 'transparent'
+                  }}
+                  className="w-full transition-all duration-500"
+                  title={`${status.name}: ${status.value}`}
+                />
+              ))}
+            </div>
+            
+            <div className="flex flex-col justify-between h-14 py-0.5">
+              {podStatusData.map(status => (
+                <div key={status.name} className="flex items-center gap-2">
+                  <div className="size-2 shrink-0" style={{ backgroundColor: status.color }} />
+                  <span className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">
+                    {status.name === "Running" ? "Active" : status.name === "Pending" ? "Warning" : "Failed"}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>

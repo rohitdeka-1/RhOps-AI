@@ -5,13 +5,18 @@ import { WorkspaceSidebar } from "./workspace-sidebar";
 import { AiChatAgent } from "@/pages/kubernetes/components/ai-chat-agent";
 import { IconSparkles } from "@tabler/icons-react";
 import { AiSummaryProvider } from "@/contexts/ai-summary-context";
+import { useClusters } from "@/hooks/use-clusters";
 
 export default function WorkspaceLayout02() {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const isOverview = pathname === "/overview";
   const isClusterView = pathname.startsWith("/cluster") || pathname.startsWith("/demo/cluster");
-  const clusterId = searchParams.get("clusterId");
+  const urlParam = searchParams.get("clusterId"); // This is actually a projectId in current routing
+
+  const { data: clusters } = useClusters();
+  const activeCluster = clusters?.find((c) => c.projectId === urlParam);
+  const realClusterId = activeCluster?.id;
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAiGlowing, setIsAiGlowing] = useState(true);
@@ -37,7 +42,7 @@ export default function WorkspaceLayout02() {
   }, []);
 
   const currentTab = searchParams.get("tab");
-  const showRightSidebar = isClusterView && clusterId && currentTab !== "ai";
+  const showRightSidebar = isClusterView && realClusterId && currentTab !== "ai";
 
   return (
     <AiSummaryProvider>
@@ -68,7 +73,7 @@ export default function WorkspaceLayout02() {
             <>
               {isChatOpen ? (
                 <aside className="w-[320px] lg:w-[350px] shrink-0 border-l border-border bg-background flex flex-col z-10 hidden md:flex animate-in slide-in-from-right-10 duration-300">
-                  <AiChatAgent onClose={() => setIsChatOpen(false)} />
+                  <AiChatAgent onClose={() => setIsChatOpen(false)} clusterId={realClusterId || undefined} />
                 </aside>
               ) : (
                 <aside className={`w-16 shrink-0 border-l border-border bg-background flex flex-col items-center justify-center z-10 hidden md:flex ${isAiGlowing ? 'ai-sidebar-glow' : ''}`}>

@@ -23,7 +23,7 @@ export class ChatController {
 
         } catch (error: any) {
             request.log.error(error);
-            return reply.code(500).send({ message: error.message || "An error occurred" });
+            return reply.code(500).send({ message: error.message || "An error occurred", stack: error.stack });
         }
     };
 
