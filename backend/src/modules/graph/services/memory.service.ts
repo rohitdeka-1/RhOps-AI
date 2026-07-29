@@ -15,11 +15,21 @@ export class MemoryGraphService {
             throw new Error("Cluster not found or you do not have permission to access it.");
         }
         
-        const kubeconfig = decrypt(cluster.kubeconfig);
-        const prometheusClient = new PrometheusClient(kubeconfig);
+        const query = `sum(container_memory_working_set_bytes{namespace=~"${namespace}", container!="", pod!=""}) by (pod)`;
+
+        // Check if agent is connected
+        const { agentManager } = await import('../../agent/agent.manager');
+        if (agentManager.isAgentConnected(clusterId)) {
+            return await agentManager.executeTool(clusterId, 'query_prometheus', { query, start, end, step });
+        }
         
-        const query = `sum(container_memory_usage_bytes{namespace="${namespace}", container!="", pod!=""}) by (pod)`;
-        
-        return await prometheusClient.queryRange(query, start, end, step);
+        // Fallback to direct connection if no agent but has kubeconfig
+        if (cluster.kubeconfig) {
+            const kubeconfig = decrypt(cluster.kubeconfig);
+            const prometheusClient = new PrometheusClient(kubeconfig);
+            return await prometheusClient.queryRange(query, start, end, step);
+        }
+
+        throw new Error("Cluster is not connected via Agent and has no kubeconfig fallback.");
     }
 }

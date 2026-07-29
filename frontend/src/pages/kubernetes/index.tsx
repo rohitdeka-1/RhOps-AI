@@ -7,6 +7,7 @@ import { OverviewTab } from "./tabs/overview-tab";
 import { ExplorerTab } from "./tabs/explorer-tab";
 import { ArchitectureTab } from "./tabs/architecture-tab";
 import { AiAssistantTab } from "./tabs/ai-assistant-tab";
+import { ErrorsTab } from "./tabs/errors-tab";
 
 export default function Kubernetes() {
   const [searchParams] = useSearchParams();
@@ -49,6 +50,8 @@ export default function Kubernetes() {
         return <ExplorerTab clusterId={projectCluster.id} />;
       case "architecture":
         return <ArchitectureTab clusterId={projectCluster.id} />;
+      case "errors":
+        return <ErrorsTab clusterId={projectCluster.id} />;
       case "ai":
         return <AiAssistantTab clusterId={projectCluster.id} cluster={projectCluster} />;
       default:

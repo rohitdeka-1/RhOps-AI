@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   IconSettings,
   IconCloud,
@@ -64,16 +64,28 @@ export function WorkspaceTopBar02() {
 
   const { summaryData, isGenerating, isNewSummary, openSummary } = useAiSummary();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-open when a new summary arrives
+  // Auto-open when a new summary arrives, and auto-close after 10s
   useEffect(() => {
     if (isNewSummary) {
       setIsDropdownOpen(true);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        setIsDropdownOpen(false);
+      }, 10000);
     }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, [isNewSummary]);
 
   const handleToggleSummary = () => {
     if (isNewSummary) openSummary(); // Mark as read
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     setIsDropdownOpen((prev) => !prev);
   };
 

@@ -2,32 +2,41 @@ import { PrometheusClient } from "../../../infrastructure/monitoring/prometheus.
 import { ClusterRepository } from "../../clusters/repositories/cluster.repository";
 import { decrypt } from "../../../utils/encryption.util";
 
-export class CpuGraphService {
+export class NetworkGraphService {
     private clusterRepository: ClusterRepository;
 
     constructor() {
         this.clusterRepository = new ClusterRepository();
     }
 
-    async getCpuMetrics(clusterId: string, userId: string, namespace: string, start: string | number, end: string | number, step: string) {
+    async getNetworkMetrics(clusterId: string, userId: string, namespace: string, start: string | number, end: string | number, step: string) {
         const cluster = await this.clusterRepository.findClusterByIdAndUserId(clusterId, userId);
         if (!cluster) {
             throw new Error("Cluster not found or you do not have permission to access it.");
         }
         
-        const query = `sum(rate(container_cpu_usage_seconds_total{namespace=~"${namespace}", container!="", pod!=""}[5m])) by (pod)`;
+        const receiveQuery = `sum(rate(container_network_receive_bytes_total{namespace=~"${namespace}", pod!=""}[5m])) by (pod)`;
+        const transmitQuery = `sum(rate(container_network_transmit_bytes_total{namespace=~"${namespace}", pod!=""}[5m])) by (pod)`;
 
         // Check if agent is connected
         const { agentManager } = await import('../../agent/agent.manager');
         if (agentManager.isAgentConnected(clusterId)) {
-            return await agentManager.executeTool(clusterId, 'query_prometheus', { query, start, end, step });
+            const [receive, transmit] = await Promise.all([
+                agentManager.executeTool(clusterId, 'query_prometheus', { query: receiveQuery, start, end, step }),
+                agentManager.executeTool(clusterId, 'query_prometheus', { query: transmitQuery, start, end, step })
+            ]);
+            return { receive, transmit };
         }
         
         // Fallback to direct connection if no agent but has kubeconfig
         if (cluster.kubeconfig) {
             const kubeconfig = decrypt(cluster.kubeconfig);
             const prometheusClient = new PrometheusClient(kubeconfig);
-            return await prometheusClient.queryRange(query, start, end, step);
+            const [receive, transmit] = await Promise.all([
+                prometheusClient.queryRange(receiveQuery, start, end, step),
+                prometheusClient.queryRange(transmitQuery, start, end, step)
+            ]);
+            return { receive, transmit };
         }
 
         throw new Error("Cluster is not connected via Agent and has no kubeconfig fallback.");

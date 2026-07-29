@@ -29,4 +29,24 @@ export default async function graphRoutes(fastify: FastifyInstance) {
             querystring: graphQuerySchema
         }
     }, graphController.getMemoryGraph);
+
+    fastify.get('/network', {
+        preValidation: [fastify.authenticate],
+        schema: {
+            querystring: graphQuerySchema
+        }
+    }, graphController.getNetworkGraph);
+
+    fastify.get('/namespaces', {
+        preValidation: [fastify.authenticate],
+        schema: {
+            querystring: {
+                type: 'object',
+                required: ['clusterId'],
+                properties: {
+                    clusterId: { type: 'string' }
+                }
+            }
+        }
+    }, graphController.getNamespaceResources);
 }

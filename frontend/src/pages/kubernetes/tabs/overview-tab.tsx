@@ -7,6 +7,7 @@ import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cartesia
 import { useClusterStream } from "@/hooks/use-cluster-stream";
 import { api } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Link } from "react-router-dom";
 
 interface OverviewTabProps {
   clusterId: string;
@@ -55,6 +56,15 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
   useEffect(() => {
     if (clusterId) {
       fetchSummary(clusterId);
+
+      // Silently check if Prometheus is already connected on mount
+      api.get(`/metrics/prometheus/check?clusterId=${clusterId}`).then(res => {
+        if (res.data?.data?.connected) {
+          setIsPrometheusEnabled(true);
+        }
+      }).catch(err => {
+        // silently ignore background check errors
+      });
     }
   }, [clusterId, fetchSummary]);
 
@@ -79,11 +89,41 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
   const serviceCount = filteredServices.length;
   const namespaceCount = filteredNamespaces.length;
 
+  // Calculate total cluster capacity
+  let totalCpuCores = 0;
+  let totalMemGB = 0;
+
+  const nodeList = nodes?.items || nodes || [];
+  nodeList.forEach((n: any) => {
+    const cpuStr = n.status?.allocatable?.cpu || "0";
+    if (cpuStr.endsWith('m')) {
+      totalCpuCores += parseInt(cpuStr) / 1000;
+    } else {
+      totalCpuCores += parseFloat(cpuStr);
+    }
+
+    const memStr = n.status?.allocatable?.memory || "0";
+    if (memStr.endsWith('Ki')) {
+      totalMemGB += parseInt(memStr) / (1024 * 1024);
+    } else if (memStr.endsWith('Mi')) {
+      totalMemGB += parseInt(memStr) / 1024;
+    } else if (memStr.endsWith('Gi')) {
+      totalMemGB += parseInt(memStr);
+    } else {
+      totalMemGB += parseInt(memStr) / (1024 * 1024 * 1024); // raw bytes
+    }
+  });
+
+  // Format to 1 decimal place
+  totalCpuCores = Math.round(totalCpuCores * 10) / 10;
+  totalMemGB = Math.round(totalMemGB * 10) / 10;
+
   // Local state for rolling charts
   const [cpuData, setCpuData] = useState<any[]>([]);
   const [memData, setMemData] = useState<any[]>([]);
   const [networkData, setNetworkData] = useState<any[]>([]);
   const [eventRateData, setEventRateData] = useState<any[]>([]);
+  const [promNamespaceData, setPromNamespaceData] = useState<any[]>([]);
 
   // Seed initial data if empty
   useEffect(() => {
@@ -107,49 +147,167 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
     }
   }, []);
 
-  // Update rolling charts when metrics arrive
+  // Fetch Prometheus data if connected
+  useEffect(() => {
+    if (!isPrometheusEnabled || !clusterId) return;
+
+    const fetchPrometheusData = async () => {
+      try {
+        const end = Math.floor(Date.now() / 1000);
+        const start = end - 5 * 60; // last 5 minutes
+        const step = "10s";
+
+        const [cpuRes, memRes, netRes, nsRes] = await Promise.all([
+          api.get(`/graph/cpu?clusterId=${clusterId}&namespace=.*&start=${start}&end=${end}&step=${step}`),
+          api.get(`/graph/memory?clusterId=${clusterId}&namespace=.*&start=${start}&end=${end}&step=${step}`),
+          api.get(`/graph/network?clusterId=${clusterId}&namespace=.*&start=${start}&end=${end}&step=${step}`),
+          api.get(`/graph/namespaces?clusterId=${clusterId}`)
+        ]);
+
+        // Parse CPU (convert to cores)
+        if (cpuRes.data?.data?.data?.result) {
+          const matrix = cpuRes.data.data.data.result;
+          const timeMap: Record<number, number> = {};
+          matrix.forEach((series: any) => {
+            series.values.forEach(([ts, val]: [number, string]) => {
+              timeMap[ts] = (timeMap[ts] || 0) + parseFloat(val);
+            });
+          });
+          const newCpuData = Object.keys(timeMap).sort().map(ts => ({
+            time: new Date(Number(ts) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            value: Math.round(timeMap[Number(ts)] * 1000) / 1000
+          }));
+          if (newCpuData.length > 0) setCpuData(newCpuData);
+        }
+
+        // Parse Memory (convert to GB)
+        if (memRes.data?.data?.data?.result) {
+          const matrix = memRes.data.data.data.result;
+          const timeMap: Record<number, number> = {};
+          matrix.forEach((series: any) => {
+            series.values.forEach(([ts, val]: [number, string]) => {
+              timeMap[ts] = (timeMap[ts] || 0) + parseFloat(val);
+            });
+          });
+          const newMemData = Object.keys(timeMap).sort().map(ts => ({
+            time: new Date(Number(ts) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            value: Math.round((timeMap[Number(ts)] / (1024 * 1024 * 1024)) * 100) / 100
+          }));
+          if (newMemData.length > 0) setMemData(newMemData);
+        }
+
+        // Parse Network (convert to MB/s)
+        if (netRes.data?.data?.receive?.data?.result && netRes.data?.data?.transmit?.data?.result) {
+          const rxMatrix = netRes.data.data.receive.data.result;
+          const txMatrix = netRes.data.data.transmit.data.result;
+
+          const rxMap: Record<number, number> = {};
+          const txMap: Record<number, number> = {};
+
+          rxMatrix.forEach((series: any) => {
+            series.values.forEach(([ts, val]: [number, string]) => { rxMap[ts] = (rxMap[ts] || 0) + parseFloat(val); });
+          });
+          txMatrix.forEach((series: any) => {
+            series.values.forEach(([ts, val]: [number, string]) => { txMap[ts] = (txMap[ts] || 0) + parseFloat(val); });
+          });
+
+          const newNetData = Object.keys(rxMap).sort().map(ts => {
+            const rx = rxMap[Number(ts)] || 0;
+            const tx = txMap[Number(ts)] || 0;
+            return {
+              time: new Date(Number(ts) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+              in: Math.round((rx / (1024 * 1024)) * 100) / 100, // MB/s
+              out: Math.round((tx / (1024 * 1024)) * 100) / 100 // MB/s
+            }
+          });
+          if (newNetData.length > 0) setNetworkData(newNetData);
+        }
+
+        // Parse Namespaces (handles both instant queries and matrix range queries)
+        if (nsRes.data?.data?.cpu?.data?.result && nsRes.data?.data?.mem?.data?.result) {
+          const cpuVector = nsRes.data.data.cpu.data.result;
+          const memVector = nsRes.data.data.mem.data.result;
+
+          const nsMap: Record<string, { cpu: number, mem: number }> = {};
+
+          cpuVector.forEach((res: any) => {
+            const ns = res.metric.namespace || "unknown";
+            const val = res.value ? parseFloat(res.value[1]) : (res.values ? parseFloat(res.values[res.values.length - 1][1]) : 0);
+            if (!nsMap[ns]) nsMap[ns] = { cpu: 0, mem: 0 };
+            nsMap[ns].cpu = Math.round(val * 1000); // millicores
+          });
+
+          memVector.forEach((res: any) => {
+            const ns = res.metric.namespace || "unknown";
+            const val = res.value ? parseFloat(res.value[1]) : (res.values ? parseFloat(res.values[res.values.length - 1][1]) : 0);
+            if (!nsMap[ns]) nsMap[ns] = { cpu: 0, mem: 0 };
+            nsMap[ns].mem = Math.round(val / (1024 * 1024)); // MiB
+          });
+
+          const newNsData = Object.keys(nsMap).map(ns => ({
+            name: ns,
+            cpu: nsMap[ns].cpu,
+            mem: nsMap[ns].mem
+          })).sort((a, b) => b.cpu - a.cpu).slice(0, 5); // top 5 by cpu
+
+          if (newNsData.length > 0) setPromNamespaceData(newNsData);
+        }
+      } catch (e) {
+        console.error("Prometheus fetch error", e);
+      }
+    };
+
+    fetchPrometheusData();
+    const interval = setInterval(fetchPrometheusData, 10000);
+    return () => clearInterval(interval);
+  }, [isPrometheusEnabled, clusterId]);
+
+  // Update rolling charts when metrics arrive (fallback if Prometheus is NOT connected)
   useEffect(() => {
     if (!nodeMetrics && cpuData.length === 0) return;
 
-    // Attempt to parse metrics (fallback to random if format unknown for now, to keep the UI looking alive)
-    let totalCpu = 0;
-    let totalMem = 0;
+    // Only fallback CPU/Mem if Prometheus is NOT enabled
+    if (!isPrometheusEnabled) {
+      let totalCpu = 0;
+      let totalMem = 0;
 
-    // Very basic parsing attempt if it's standard K8s metrics server format
-    if (nodeMetrics?.items && nodeMetrics.items.length > 0) {
-      nodeMetrics.items.forEach((nm: any) => {
-        if (nm.usage?.cpu) {
-          const cpuVal = parseInt(nm.usage.cpu.replace(/[^0-9]/g, '')) || 0;
-          totalCpu += (cpuVal / 1000000); // approximate conversion to millicores or similar
-        }
-        if (nm.usage?.memory) {
-          const memVal = parseInt(nm.usage.memory.replace(/[^0-9]/g, '')) || 0;
-          totalMem += (memVal / 1024 / 1024); // approx to GB if it was in Ki
-        }
-      });
-    } else {
-      // Fake live data slightly based on last point if we can't parse it
-      totalCpu = Math.max(10, Math.min(90, (cpuData[cpuData.length - 1]?.value || 15) + (Math.random() * 10 - 5)));
-      totalMem = Math.max(2, Math.min(16, (memData[memData.length - 1]?.value || 3.1) + (Math.random() * 0.4 - 0.2)));
+      if (nodeMetrics?.items && nodeMetrics.items.length > 0) {
+        nodeMetrics.items.forEach((nm: any) => {
+          if (nm.usage?.cpu) {
+            const cpuVal = parseInt(nm.usage.cpu.replace(/[^0-9]/g, '')) || 0;
+            totalCpu += (cpuVal / 1000000);
+          }
+          if (nm.usage?.memory) {
+            const memVal = parseInt(nm.usage.memory.replace(/[^0-9]/g, '')) || 0;
+            totalMem += (memVal / 1024 / 1024);
+          }
+        });
+      } else {
+        totalCpu = Math.max(10, Math.min(90, (cpuData[cpuData.length - 1]?.value || 15) + (Math.random() * 10 - 5)));
+        totalMem = Math.max(2, Math.min(16, (memData[memData.length - 1]?.value || 3.1) + (Math.random() * 0.4 - 0.2)));
+      }
+
+      const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setCpuData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, value: Math.round(totalCpu * 10) / 10 }] : prev);
+      setMemData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, value: Math.round(totalMem * 100) / 100 }] : prev);
     }
 
     const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    setCpuData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, value: Math.round(totalCpu * 10) / 10 }] : prev);
-    setMemData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, value: Math.round(totalMem * 100) / 100 }] : prev);
-
-    // Fake network I/O based on pod count activity
-    const netIn = Math.round(Math.random() * 50 + (podCount * 2));
-    const netOut = Math.round(Math.random() * 30 + podCount);
-    setNetworkData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, in: netIn, out: netOut }] : prev);
-
-    // Update error rate from live events
-    if (events?.items) {
-      const recentErrors = events.items.filter((e: any) => e.type === "Warning").length;
-      setEventRateData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, errors: recentErrors }] : prev);
+    // Only fallback network if Prometheus is NOT enabled
+    if (!isPrometheusEnabled) {
+      // Fake network I/O based on pod count activity (to be replaced with Prometheus Network endpoints later)
+      const netIn = Math.round(Math.random() * 50 + (podCount * 2));
+      const netOut = Math.round(Math.random() * 30 + podCount);
+      setNetworkData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, in: netIn, out: netOut }] : prev);
     }
 
-  }, [nodeMetrics, podCount, events]);
+    // Update error rate from live events
+    const eventList = events?.items || events || [];
+    const recentErrors = eventList.filter((e: any) => e.type === "Warning").length;
+    setEventRateData(prev => prev.length > 0 ? [...prev.slice(1), { time: t, errors: recentErrors }] : prev);
+
+  }, [nodeMetrics, podCount, events, isPrometheusEnabled]);
 
   // Calculate Pod Status Distribution
   let running = 0;
@@ -165,15 +323,15 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
       ...(p.status?.containerStatuses || []),
       ...(p.status?.ephemeralContainerStatuses || [])
     ];
-    
+
     for (const cs of containerStatuses) {
       if (cs.state?.waiting?.reason && cs.state.waiting.reason !== "ContainerCreating" && cs.state.waiting.reason !== "PodInitializing") {
-         hasError = true;
-         break;
+        hasError = true;
+        break;
       }
       if (cs.state?.terminated?.reason && cs.state.terminated.reason !== "Completed") {
-         hasError = true;
-         break;
+        hasError = true;
+        break;
       }
     }
 
@@ -197,11 +355,13 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
   const totalPodsForStatus = running + pending + failed || 1; // avoid div by zero
 
   // Map namespaces
-  const namespaceResourceData = filteredNamespaces.slice(0, 5).map((ns: any) => ({
-    name: ns.metadata?.name || ns.name || "unknown",
-    cpu: Math.floor(Math.random() * 300 + 50), // Mock resources per NS since APIs usually don't aggregate this easily
-    mem: Math.floor(Math.random() * 1000 + 200),
-  }));
+  const namespaceResourceData = isPrometheusEnabled && promNamespaceData.length > 0
+    ? promNamespaceData
+    : filteredNamespaces.slice(0, 5).map((ns: any) => ({
+      name: ns.metadata?.name || ns.name || "unknown",
+      cpu: Math.floor(Math.random() * 300 + 50), // Mock fallback
+      mem: Math.floor(Math.random() * 1000 + 200),
+    }));
 
   if (namespaceResourceData.length === 0) {
     namespaceResourceData.push(
@@ -266,8 +426,8 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
           { label: "Total Pods", value: podCount, icon: IconBox },
           { label: "Deployments", value: deploymentCount, icon: IconDatabase },
           { label: "Services", value: serviceCount, icon: IconNetwork },
-          { label: "CPU Usage", value: `${cpuData.length > 0 ? cpuData[cpuData.length - 1].value : 0}%`, icon: IconCpu },
-          { label: "Mem Usage", value: `${memData.length > 0 ? memData[memData.length - 1].value : 0} GB`, icon: IconCpu },
+          { label: "CPU Usage", value: `${cpuData.length > 0 ? cpuData[cpuData.length - 1].value : 0} / ${totalCpuCores || '?'} c`, icon: IconCpu },
+          { label: "Mem Usage", value: `${memData.length > 0 ? memData[memData.length - 1].value : 0} / ${totalMemGB || '?'} GB`, icon: IconCpu },
         ].map((stat, idx) => (
           <div key={idx} className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col items-start gap-3">
             <div className="text-muted-foreground">
@@ -312,7 +472,7 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
         <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
           {/* CPU Chart */}
           <div className="p-5">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">CPU Usage (%)</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-4">CPU Usage (Cores)</h3>
             <div className="h-[180px] w-full">
               <ResponsiveContainer width="100%" height="100%" debounce={100}>
                 <AreaChart data={cpuData} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
@@ -472,9 +632,17 @@ helm install prometheus prometheus-community/kube-prometheus-stack --namespace m
 
           {/* Error Rate Chart */}
           <div className="bg-card rounded-xl border border-border shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <IconAlertCircle className="size-5 text-red-500" />
-              <h2 className="font-semibold">Warning & Error Rate</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <IconAlertCircle className="size-5 text-red-500" />
+                <h2 className="font-semibold">Warning & Error Rate</h2>
+              </div>
+              <Link
+                to={`/cluster?clusterId=${cluster?.projectId}&tab=errors`}
+                className="text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2 py-1 transition-colors"
+              >
+                View Details
+              </Link>
             </div>
             <div className="h-[140px] w-full">
               <ResponsiveContainer width="100%" height="100%" debounce={100}>
