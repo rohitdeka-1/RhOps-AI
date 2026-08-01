@@ -51,7 +51,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   fastify.post('/logout', logoutController.logout);
   fastify.post('/refresh', refreshTokenController.refresh);
-  
+
   fastify.post('/github', {
     schema: {
       body: {
@@ -66,3 +66,4 @@ export default async function authRoutes(fastify: FastifyInstance) {
   }, githubController.handleCallback);
 
 }
+

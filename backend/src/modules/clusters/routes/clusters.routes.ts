@@ -18,22 +18,22 @@ export default async function clusterRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 required: ['name', 'provider', 'projectId'],
                 properties: {
-                    name: { 
-                        type: 'object', 
-                        required: ['value'], 
-                        properties: { value: { type: 'string' } } 
+                    name: {
+                        type: 'object',
+                        required: ['value'],
+                        properties: { value: { type: 'string' } }
                     },
-                    provider: { 
-                        type: 'object', 
-                        required: ['value'], 
-                        properties: { value: { type: 'string' } } 
+                    provider: {
+                        type: 'object',
+                        required: ['value'],
+                        properties: { value: { type: 'string' } }
                     },
-                    projectId: { 
-                        type: 'object', 
-                        required: ['value'], 
-                        properties: { value: { type: 'string' } } 
+                    projectId: {
+                        type: 'object',
+                        required: ['value'],
+                        properties: { value: { type: 'string' } }
                     },
-                    kubeconfig: { 
+                    kubeconfig: {
                         anyOf: [
                             { type: 'object' },
                             { type: 'array' }
@@ -80,12 +80,14 @@ export default async function clusterRoutes(fastify: FastifyInstance) {
     }, listClusterController.listNamespaces);
 
     const topologyController = new TopologyController();
-    
+
     fastify.get('/:id/topology', {
         preValidation: [fastify.authenticate]
     }, topologyController.getTopology.bind(topologyController));
-    
+
     fastify.post('/:id/topology', {
         preValidation: [fastify.authenticate]
     }, topologyController.saveTopology.bind(topologyController));
 }
+
+
